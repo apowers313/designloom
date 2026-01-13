@@ -1,0 +1,15 @@
+id: basic-visualization
+name: Basic Visualization
+category: visualization
+description: Display graph with nodes and edges
+status: implemented
+algorithms:
+  - force-directed
+used_by_workflows:
+  - W01
+implemented_by_components:
+  - graph-canvas
+requirements:
+  - Show nodes and edges clearly
+  - Support zoom and pan
+  - Auto-layout on load

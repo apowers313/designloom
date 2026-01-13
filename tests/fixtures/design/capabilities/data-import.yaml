@@ -1,0 +1,15 @@
+id: data-import
+name: Data Import
+category: data
+description: Import graph data from various file formats
+status: implemented
+algorithms: []
+used_by_workflows:
+  - W01
+  - W02
+implemented_by_components:
+  - data-import-dialog
+requirements:
+  - Support CSV, JSON, GraphML formats
+  - Validate file structure before import
+  - Show progress for large files

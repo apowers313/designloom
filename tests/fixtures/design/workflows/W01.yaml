@@ -1,0 +1,23 @@
+id: W01
+name: First Load Experience
+category: onboarding
+validated: true
+personas:
+  - analyst-alex
+requires_capabilities:
+  - data-import
+  - basic-visualization
+suggested_components:
+  - welcome-panel
+  - data-import-dialog
+starting_state:
+  data_type: unknown
+  node_count: "0"
+  edge_density: low
+  user_expertise: novice
+goal: Load sample or personal data and see a basic visualization
+success_criteria:
+  - metric: time_to_first_visualization
+    target: "< 30 seconds"
+  - metric: user_understands_next_steps
+    target: clear call-to-action visible

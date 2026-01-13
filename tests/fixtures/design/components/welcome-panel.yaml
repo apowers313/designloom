@@ -1,0 +1,12 @@
+id: welcome-panel
+name: Welcome Panel
+category: display
+description: Welcome message and quick start guide for new users
+status: planned
+implements_capabilities: []
+used_in_workflows:
+  - W01
+dependencies: []
+props:
+  showTutorial: Whether to show tutorial link
+  userName: User name for personalization

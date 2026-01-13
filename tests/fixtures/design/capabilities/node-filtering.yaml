@@ -1,0 +1,14 @@
+id: node-filtering
+name: Node Filtering
+category: interaction
+description: Filter visible nodes by attributes
+status: planned
+algorithms: []
+used_by_workflows:
+  - W02
+implemented_by_components:
+  - filter-panel
+requirements:
+  - Filter by node type
+  - Filter by attribute value
+  - Save filter presets

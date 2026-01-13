@@ -1,0 +1,15 @@
+id: data-import-dialog
+name: Data Import Dialog
+category: dialog
+description: Modal dialog for importing graph data files
+status: implemented
+implements_capabilities:
+  - data-import
+used_in_workflows:
+  - W01
+dependencies:
+  - file-picker
+  - progress-bar
+props:
+  onImport: Function called when import completes
+  allowedFormats: Array of allowed file extensions

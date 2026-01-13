@@ -1,0 +1,18 @@
+id: analyst-alex
+name: Analyst Alex
+role: Financial Analyst
+characteristics:
+  expertise: intermediate
+  time_pressure: high
+  graph_literacy: basic
+  domain_knowledge: advanced
+goals:
+  - Identify anomalies in transaction data
+  - Generate reports for compliance team
+  - Track patterns over time
+frustrations:
+  - Tools that require programming knowledge
+  - Slow response times on large datasets
+workflows:
+  - W01
+  - W02

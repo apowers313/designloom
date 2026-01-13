@@ -1,0 +1,21 @@
+id: W02
+name: Data Exploration
+category: exploration
+validated: false
+personas:
+  - analyst-alex
+requires_capabilities:
+  - data-import
+  - node-filtering
+suggested_components:
+  - filter-panel
+  - graph-canvas
+starting_state:
+  data_type: graph
+  node_count: "100"
+  edge_density: medium
+  user_expertise: intermediate
+goal: Explore and understand graph structure
+success_criteria:
+  - metric: exploration_depth
+    target: can navigate 3 levels deep
