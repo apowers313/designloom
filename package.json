@@ -1,6 +1,6 @@
 {
     "name": "designloom",
-    "version": "0.1.0",
+    "version": "1.0.0",
     "private": true,
     "description": "MCP server for workflow-driven design management",
     "author": "Adam Powers <apowers@ato.ms>",

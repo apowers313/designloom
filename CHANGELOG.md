@@ -1,3 +1,10 @@
+# 1.0.0 (2026-01-13)
+
+
+### Features
+
+* initial commit ([ca1638d](https://github.com/apowers313/designloom/commit/ca1638dc9f1f057f77d458ca12a98724588b48a8))
+
 # Changelog
 
 All notable changes to this project will be documented in this file.
