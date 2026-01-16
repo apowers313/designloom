@@ -275,6 +275,84 @@ describe("Update Operations", () => {
             expect(result.success).toBe(false);
             expect(result.error).toContain("Persona 'non-existent' not found");
         });
+
+        it("rejects invalid source URL (file path)", () => {
+            store.createPersona({
+                id: "source-test-persona",
+                name: "Source Test",
+                role: "Tester",
+                characteristics: { expertise: "novice" },
+                goals: ["Test sources"],
+            });
+
+            const result = store.updatePersona("source-test-persona", {
+                sources: [
+                    {
+                        title: "Local File",
+                        url: "design/ui/some-file.md",
+                    },
+                ],
+            });
+
+            expect(result.success).toBe(false);
+            expect(result.error).toContain("Invalid url");
+        });
+
+        it("accepts valid source URL", () => {
+            store.createPersona({
+                id: "valid-source-persona",
+                name: "Valid Source Test",
+                role: "Tester",
+                characteristics: { expertise: "novice" },
+                goals: ["Test sources"],
+            });
+
+            const result = store.updatePersona("valid-source-persona", {
+                sources: [
+                    {
+                        title: "Valid Source",
+                        url: "https://example.com/docs",
+                    },
+                ],
+            });
+
+            expect(result.success).toBe(true);
+            const persona = store.getPersona("valid-source-persona");
+            expect(persona?.sources).toHaveLength(1);
+            expect(persona?.sources[0].url).toBe("https://example.com/docs");
+        });
+
+        it("updates persona with UX fields (quote, bio, motivations, behaviors, context)", () => {
+            store.createPersona({
+                id: "ux-update-persona",
+                name: "UX Update Test",
+                role: "Tester",
+                characteristics: { expertise: "novice" },
+                goals: ["Test UX updates"],
+            });
+
+            const result = store.updatePersona("ux-update-persona", {
+                quote: "I need to see the connections.",
+                bio: "A dedicated analyst focused on patterns.",
+                motivations: ["Career growth", "Protecting company"],
+                behaviors: ["Uses keyboard shortcuts", "Works with multiple monitors"],
+                context: {
+                    frequency: "daily",
+                    devices: ["desktop", "laptop"],
+                    voluntary: false,
+                },
+            });
+
+            expect(result.success).toBe(true);
+            const persona = store.getPersona("ux-update-persona");
+            expect(persona?.quote).toBe("I need to see the connections.");
+            expect(persona?.bio).toBe("A dedicated analyst focused on patterns.");
+            expect(persona?.motivations).toEqual(["Career growth", "Protecting company"]);
+            expect(persona?.behaviors).toEqual(["Uses keyboard shortcuts", "Works with multiple monitors"]);
+            expect(persona?.context?.frequency).toBe("daily");
+            expect(persona?.context?.devices).toEqual(["desktop", "laptop"]);
+            expect(persona?.context?.voluntary).toBe(false);
+        });
     });
 
     describe("updateComponent", () => {
@@ -334,6 +412,98 @@ describe("Update Operations", () => {
 
             expect(result.success).toBe(false);
             expect(result.error).toContain("Component 'non-existent' not found");
+        });
+
+        it("rejects invalid source URL (file path)", () => {
+            store.createComponent({
+                id: "source-test-comp",
+                name: "Source Test",
+                category: "dialog",
+                description: "Test sources",
+            });
+
+            const result = store.updateComponent("source-test-comp", {
+                sources: [
+                    {
+                        title: "Local File",
+                        url: "design/components/button.md",
+                    },
+                ],
+            });
+
+            expect(result.success).toBe(false);
+            expect(result.error).toContain("Invalid url");
+        });
+    });
+
+    describe("source URL validation in updates", () => {
+        it("rejects invalid workflow source URL", () => {
+            store.createWorkflow({
+                id: "W30",
+                name: "Source Test Workflow",
+                category: "analysis",
+                goal: "Test sources",
+            });
+
+            const result = store.updateWorkflow("W30", {
+                sources: [
+                    {
+                        title: "Local File",
+                        url: "design/workflows/test.md",
+                    },
+                ],
+            });
+
+            expect(result.success).toBe(false);
+            expect(result.error).toContain("Invalid url");
+        });
+
+        it("rejects invalid capability source URL", () => {
+            store.createCapability({
+                id: "source-test-cap",
+                name: "Source Test",
+                category: "data",
+                description: "Test sources",
+            });
+
+            const result = store.updateCapability("source-test-cap", {
+                sources: [
+                    {
+                        title: "Relative Path",
+                        url: "./docs/capability.md",
+                    },
+                ],
+            });
+
+            expect(result.success).toBe(false);
+            expect(result.error).toContain("Invalid url");
+        });
+
+        it("accepts valid URLs for all entity types", () => {
+            store.createWorkflow({
+                id: "W31",
+                name: "Valid URL Workflow",
+                category: "analysis",
+                goal: "Test valid URLs",
+            });
+
+            store.createCapability({
+                id: "valid-url-cap",
+                name: "Valid URL Cap",
+                category: "data",
+                description: "Test valid URLs",
+            });
+
+            const workflowResult = store.updateWorkflow("W31", {
+                sources: [{ title: "Docs", url: "https://docs.example.com" }],
+            });
+
+            const capResult = store.updateCapability("valid-url-cap", {
+                sources: [{ title: "API", url: "http://localhost:3000/api" }],
+            });
+
+            expect(workflowResult.success).toBe(true);
+            expect(capResult.success).toBe(true);
         });
     });
 });

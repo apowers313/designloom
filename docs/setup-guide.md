@@ -13,12 +13,12 @@ This guide walks you through setting up Designloom in your project.
 ### Option 1: Install from npm (when published)
 
 ```bash
-npm install @graphty/designloom
+npm install designloom
 ```
 
 ### Option 2: Use from monorepo
 
-If you're working within the graphty-monorepo:
+If you're working within the designloom repository:
 
 ```bash
 cd designloom
@@ -58,7 +58,7 @@ Create or edit `.mcp.json` in your project root:
     "mcpServers": {
         "designloom": {
             "command": "npx",
-            "args": ["@graphty/designloom"],
+            "args": ["designloom"],
             "env": {
                 "DESIGNLOOM_DATA_PATH": "./design/designloom"
             }
@@ -69,7 +69,7 @@ Create or edit `.mcp.json` in your project root:
 
 ### Local Development Configuration
 
-For development within the graphty-monorepo:
+For local development:
 
 ```json
 {
@@ -94,7 +94,7 @@ You can customize the data path:
     "mcpServers": {
         "designloom": {
             "command": "npx",
-            "args": ["@graphty/designloom"],
+            "args": ["designloom"],
             "env": {
                 "DESIGNLOOM_DATA_PATH": "./docs/design-artifacts"
             }
@@ -151,7 +151,7 @@ If you want worktree-specific design documents, use an absolute path:
     "mcpServers": {
         "designloom": {
             "command": "npx",
-            "args": ["@graphty/designloom"],
+            "args": ["designloom"],
             "env": {
                 "DESIGNLOOM_DATA_PATH": "/absolute/path/to/design/docs"
             }

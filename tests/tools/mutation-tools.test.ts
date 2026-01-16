@@ -149,6 +149,53 @@ describe("Mutation Tools", () => {
             expect(result.isError).toBe(true);
             expect(result.content[0].text).toContain("already exists");
         });
+
+        it("creates persona with all UX fields", async () => {
+            const result = await server.callTool("design_create_persona", {
+                id: "ux-complete-persona",
+                name: "Sarah Chen",
+                role: "Senior Fraud Analyst",
+                quote: "I need to see the connections, not just the data points.",
+                bio: "Sarah has been a fraud analyst for 5 years. She started in rule-based detection but now focuses on graph-based investigation.",
+                characteristics: {
+                    expertise: "expert",
+                    time_pressure: "high",
+                    graph_literacy: "advanced",
+                    domain_knowledge: "expert",
+                },
+                motivations: [
+                    "Protect the company from financial loss",
+                    "Advance career through successful investigations",
+                ],
+                behaviors: [
+                    "Uses Neo4j and Palantir daily",
+                    "Prefers keyboard shortcuts over mouse",
+                ],
+                goals: ["Identify fraud patterns quickly", "Reduce false positives"],
+                frustrations: ["Slow query response times", "Limited collaboration features"],
+                context: {
+                    frequency: "daily",
+                    devices: ["desktop", "laptop"],
+                    voluntary: false,
+                },
+            });
+
+            expect(result.isError).toBeFalsy();
+            const data = JSON.parse(result.content[0].text);
+            expect(data.success).toBe(true);
+
+            // Verify the created persona by fetching it
+            const getResult = await server.callTool("design_get_persona", { id: "ux-complete-persona" });
+            expect(getResult.isError).toBeFalsy();
+            const persona = JSON.parse(getResult.content[0].text);
+            expect(persona.quote).toBe("I need to see the connections, not just the data points.");
+            expect(persona.bio).toContain("fraud analyst for 5 years");
+            expect(persona.motivations).toHaveLength(2);
+            expect(persona.behaviors).toHaveLength(2);
+            expect(persona.context.frequency).toBe("daily");
+            expect(persona.context.devices).toEqual(["desktop", "laptop"]);
+            expect(persona.context.voluntary).toBe(false);
+        });
     });
 
     describe("design_create_component", () => {

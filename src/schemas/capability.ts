@@ -1,6 +1,8 @@
 /* eslint-disable camelcase -- snake_case matches YAML field names for serialization */
 import { z } from "zod";
 
+import { SourceSchema, VersionMetadataSchema } from "./source.js";
+
 /**
  * Capability ID pattern: kebab-case (e.g., data-import, node-filtering)
  */
@@ -44,7 +46,8 @@ export const CapabilitySchema = z.object({
     used_by_workflows: z.array(z.string()).optional().default([]),
     implemented_by_components: z.array(z.string()).optional().default([]),
     requirements: z.array(z.string()).optional().default([]),
-});
+    sources: z.array(SourceSchema).optional().default([]),
+}).merge(VersionMetadataSchema);
 
 /**
  * Capability type derived from schema

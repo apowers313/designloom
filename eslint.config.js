@@ -22,6 +22,8 @@ export default tseslint.config(
             "**/vitest.config.ts",
             // Tests are not in tsconfig (vitest handles them separately)
             "tests/**",
+            // Browser frontend has separate tsconfig and React conventions
+            "src/browser/frontend/**",
         ],
     },
 

@@ -30,6 +30,7 @@ Workflows are the starting point. They describe user journeys or tasks.
 - `suggested_components`: UI elements that might help
 - `starting_state`: Initial conditions
 - `success_criteria`: How we measure success
+- `sources`: References to source materials (research, docs, etc.)
 
 ### Capabilities
 
@@ -42,6 +43,7 @@ Capabilities are features or functions the system provides. They are implementat
 - `description`: What the capability does
 - `status`: Implementation status (planned, in-progress, implemented, deprecated)
 - `requirements`: Detailed requirements
+- `sources`: References to source materials (specs, research, etc.)
 
 ### Personas
 
@@ -51,9 +53,15 @@ Personas represent user archetypes with specific goals, expertise levels, and fr
 - `id`: Unique identifier in kebab-case
 - `name`: Human-readable name
 - `role`: User's role or job title
+- `quote`: A humanizing tagline capturing their attitude/perspective
+- `bio`: Brief narrative description bringing the persona to life
 - `characteristics`: Expertise level, time pressure, domain knowledge
+- `motivations`: Underlying drivers - why they care about their goals
+- `behaviors`: How they currently work, tools they use, patterns
 - `goals`: What the user wants to achieve
 - `frustrations`: Pain points to avoid
+- `context`: Usage context (frequency, devices, voluntary/required)
+- `sources`: References to source materials (interviews, surveys, etc.)
 
 ### Components
 
@@ -66,6 +74,7 @@ Components are UI elements that implement capabilities.
 - `description`: What the component does
 - `implements_capabilities`: Capabilities this component provides
 - `status`: Implementation status
+- `sources`: References to source materials (design systems, patterns, etc.)
 
 ## The Workflow-Driven Design Process
 
@@ -262,6 +271,15 @@ success_criteria:
     target: "< 5%"
   - metric: drill_down_capability
     target: can inspect any node within 3 clicks
+sources:
+  - title: Security Analyst Interview Notes
+    url: https://docs.example.com/research/security-interviews
+    summary: Key insights from interviews with SOC analysts
+    bibliography:
+      author: UX Research Team
+      date: "2024-02-15"
+  - title: NIST Anomaly Detection Guidelines
+    url: https://nvd.nist.gov/guidelines/anomaly-detection
 ```
 
 This workflow:

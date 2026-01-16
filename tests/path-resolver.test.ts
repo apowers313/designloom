@@ -13,10 +13,15 @@ describe("Path Resolver", () => {
     let getMainRepoPath: () => string | null;
     let isInWorktree: () => boolean;
     let resolveDataPath: (configuredPath: string) => string;
+    let originalCwd: () => string;
+    let originalEnvGitCwd: string | undefined;
 
     beforeEach(async () => {
         vi.resetModules();
         mockExecSync.mockReset();
+        originalCwd = process.cwd;
+        originalEnvGitCwd = process.env.DESIGNLOOM_GIT_CWD;
+        delete process.env.DESIGNLOOM_GIT_CWD;
         // Re-import after resetting
         const module = await import("../src/path-resolver.js");
         getMainRepoPath = module.getMainRepoPath;
@@ -25,7 +30,97 @@ describe("Path Resolver", () => {
     });
 
     afterEach(() => {
+        process.cwd = originalCwd;
+        if (originalEnvGitCwd !== undefined) {
+            process.env.DESIGNLOOM_GIT_CWD = originalEnvGitCwd;
+        } else {
+            delete process.env.DESIGNLOOM_GIT_CWD;
+        }
         vi.restoreAllMocks();
+    });
+
+    describe("execGitCommand cwd behavior (regression test for MCP spawned process)", () => {
+        it("passes cwd to execSync to ensure correct working directory in spawned processes", () => {
+            // This test verifies the fix for a bug where MCP-spawned processes
+            // would fail to detect git worktrees because execSync was not
+            // explicitly given a cwd, causing git commands to run from the
+            // wrong directory in certain spawn contexts.
+            const testCwd = "/test/worktree/path";
+            process.cwd = () => testCwd;
+
+            mockExecSync.mockImplementation((cmd: string) => {
+                if (cmd.includes("--git-dir")) {
+                    return ".git\n";
+                }
+                if (cmd.includes("--git-common-dir")) {
+                    return ".git\n";
+                }
+                return "";
+            });
+
+            isInWorktree();
+
+            // Verify that execSync was called with cwd option set to process.cwd()
+            expect(mockExecSync).toHaveBeenCalled();
+            const calls = mockExecSync.mock.calls;
+            for (const call of calls) {
+                const options = call[1] as { cwd?: string };
+                expect(options.cwd).toBe(testCwd);
+            }
+        });
+
+        it("uses DESIGNLOOM_GIT_CWD env variable when set (MCP workaround)", async () => {
+            // This test verifies that DESIGNLOOM_GIT_CWD takes precedence over process.cwd()
+            // This is needed because some MCP clients don't properly respect the cwd setting
+            const envCwd = "/env/worktree/path";
+            const processCwd = "/different/process/path";
+
+            process.env.DESIGNLOOM_GIT_CWD = envCwd;
+            process.cwd = () => processCwd;
+
+            // Need to re-import after setting env variable
+            vi.resetModules();
+            const module = await import("../src/path-resolver.js");
+
+            mockExecSync.mockImplementation((cmd: string) => {
+                if (cmd.includes("--git-dir")) {
+                    return ".git\n";
+                }
+                if (cmd.includes("--git-common-dir")) {
+                    return ".git\n";
+                }
+                return "";
+            });
+
+            module.isInWorktree();
+
+            // Verify that execSync was called with cwd from env variable, not process.cwd()
+            expect(mockExecSync).toHaveBeenCalled();
+            const calls = mockExecSync.mock.calls;
+            for (const call of calls) {
+                const options = call[1] as { cwd?: string };
+                expect(options.cwd).toBe(envCwd);
+            }
+        });
+
+        it("resolves data path using DESIGNLOOM_GIT_CWD when not in worktree", async () => {
+            // Verify that resolveDataPath uses the env variable for fallback resolution
+            const envCwd = "/env/worktree/path";
+
+            process.env.DESIGNLOOM_GIT_CWD = envCwd;
+            process.cwd = () => "/different/process/path";
+
+            // Re-import after setting env variable
+            vi.resetModules();
+            const module = await import("../src/path-resolver.js");
+
+            mockExecSync.mockImplementation(() => {
+                throw new Error("fatal: not a git repository");
+            });
+
+            const resolved = module.resolveDataPath("./design/designloom");
+            expect(resolved).toBe(path.resolve(envCwd, "./design/designloom"));
+        });
     });
 
     describe("isInWorktree", () => {

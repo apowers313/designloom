@@ -89,6 +89,18 @@ Create new entities with validation.
 
 All referenced entities must exist. Creates the YAML file and updates reverse relationships.
 
+All create tools support a `sources` parameter for tracking where information came from:
+
+```
+> "Create a capability for data-import with sources from our user research docs"
+```
+
+Sources include:
+- `title`: Name of the source document (required)
+- `url`: URL to the source (required)
+- `summary`: Brief description of what the source contains
+- `bibliography`: Optional author, date, publisher, version info
+
 #### design_update_*
 Update existing entities.
 
@@ -98,7 +110,7 @@ Update existing entities.
 
 Parameters:
 - `id` (required): Entity ID
-- `updates`: Object with fields to update
+- `updates`: Object with fields to update (including `sources` array)
 
 #### design_delete_*
 Delete entities with dependency checking.

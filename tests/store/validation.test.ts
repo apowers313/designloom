@@ -46,11 +46,21 @@ function cleanupTempDir(): void {
 }
 
 /**
+ * Version metadata to add to entities written directly to YAML (bypassing store)
+ */
+const testVersionMetadata = {
+    version: "1.0.0",
+    created_at: "2025-01-15T00:00:00.000Z",
+    updated_at: "2025-01-15T00:00:00.000Z",
+};
+
+/**
  * Write a YAML file directly (bypassing validation for testing broken references)
  */
-function writeYamlFile(subdir: string, filename: string, content: unknown): void {
+function writeYamlFile(subdir: string, filename: string, content: Record<string, unknown>): void {
     const filePath = path.join(TEMP_PATH, subdir, `${filename}.yaml`);
-    fs.writeFileSync(filePath, yamlStringify(content), "utf-8");
+    const contentWithVersion = { ...content, ...testVersionMetadata };
+    fs.writeFileSync(filePath, yamlStringify(contentWithVersion), "utf-8");
 }
 
 describe("Validation", () => {

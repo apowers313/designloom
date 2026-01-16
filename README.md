@@ -1,4 +1,4 @@
-# @graphty/designloom
+# designloom
 
 MCP (Model Context Protocol) server for workflow-driven design management. Designloom enables Claude Code to query, create, and analyze design artifacts (workflows, capabilities, personas, components) stored as YAML files in your project repository.
 
@@ -16,7 +16,7 @@ MCP (Model Context Protocol) server for workflow-driven design management. Desig
 ### 1. Install (if publishing to npm)
 
 ```bash
-npm install @graphty/designloom
+npm install designloom
 ```
 
 ### 2. Configure Claude Code
@@ -28,7 +28,7 @@ Add to your project's `.mcp.json`:
     "mcpServers": {
         "designloom": {
             "command": "npx",
-            "args": ["@graphty/designloom"],
+            "args": ["designloom"],
             "env": {
                 "DESIGNLOOM_DATA_PATH": "./design/designloom"
             }

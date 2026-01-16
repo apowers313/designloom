@@ -1,6 +1,8 @@
 /* eslint-disable camelcase -- snake_case matches YAML field names for serialization */
 import { z } from "zod";
 
+import { SourceSchema, VersionMetadataSchema } from "./source.js";
+
 /**
  * Workflow ID pattern: W followed by 1-3 digits (e.g., W01, W99, W123)
  */
@@ -52,7 +54,8 @@ export const WorkflowSchema = z.object({
     starting_state: StartingStateSchema.optional(),
     goal: z.string().min(1),
     success_criteria: z.array(SuccessCriterionSchema).optional().default([]),
-});
+    sources: z.array(SourceSchema).optional().default([]),
+}).merge(VersionMetadataSchema);
 
 /**
  * Workflow type derived from schema

@@ -1,3 +1,4 @@
+/* eslint-disable camelcase -- snake_case matches YAML field names for serialization */
 import type { DesignDocsStore, EntityType } from "../store/yaml-store.js";
 
 /**
@@ -103,6 +104,53 @@ export function getQueryTools(): ToolDefinition[] {
             },
         },
         {
+            name: "design_list_tokens",
+            description: "List all design token sets with optional filtering",
+            inputSchema: {
+                type: "object",
+                properties: {
+                    extends: {
+                        type: "string",
+                        description: "Filter by parent token set ID that this extends",
+                    },
+                },
+            },
+        },
+        {
+            name: "design_list_views",
+            description: "List all views with optional filtering by layout type, workflow, or route presence",
+            inputSchema: {
+                type: "object",
+                properties: {
+                    layout_type: {
+                        type: "string",
+                        description: "Filter by layout type (single-column, sidebar-left, dashboard, etc.)",
+                    },
+                    workflow: {
+                        type: "string",
+                        description: "Filter by workflow ID that uses this view",
+                    },
+                    has_route: {
+                        type: "boolean",
+                        description: "Filter by whether the view has defined routes",
+                    },
+                },
+            },
+        },
+        {
+            name: "design_list_interactions",
+            description: "List all interaction patterns with optional filtering",
+            inputSchema: {
+                type: "object",
+                properties: {
+                    applies_to: {
+                        type: "string",
+                        description: "Filter by component category this pattern applies to",
+                    },
+                },
+            },
+        },
+        {
             name: "design_get_workflow",
             description: "Get a workflow by ID with all resolved relationships (capabilities, personas, components)",
             inputSchema: {
@@ -159,6 +207,48 @@ export function getQueryTools(): ToolDefinition[] {
             },
         },
         {
+            name: "design_get_tokens",
+            description: "Get a token set by ID with resolved parent reference",
+            inputSchema: {
+                type: "object",
+                properties: {
+                    id: {
+                        type: "string",
+                        description: "Tokens ID (e.g., default-theme)",
+                    },
+                },
+                required: ["id"],
+            },
+        },
+        {
+            name: "design_get_view",
+            description: "Get a view by ID with all resolved relationships (workflows, components)",
+            inputSchema: {
+                type: "object",
+                properties: {
+                    id: {
+                        type: "string",
+                        description: "View ID (e.g., V01)",
+                    },
+                },
+                required: ["id"],
+            },
+        },
+        {
+            name: "design_get_interaction",
+            description: "Get an interaction pattern by ID with resolved component references",
+            inputSchema: {
+                type: "object",
+                properties: {
+                    id: {
+                        type: "string",
+                        description: "Interaction pattern ID (e.g., button-interaction)",
+                    },
+                },
+                required: ["id"],
+            },
+        },
+        {
             name: "design_get_dependencies",
             description: "Get all entities that the specified entity depends on",
             inputSchema: {
@@ -166,7 +256,7 @@ export function getQueryTools(): ToolDefinition[] {
                 properties: {
                     entityType: {
                         type: "string",
-                        enum: ["workflow", "capability", "persona", "component"],
+                        enum: ["workflow", "capability", "persona", "component", "tokens", "view", "interaction"],
                         description: "Type of entity",
                     },
                     id: {
@@ -185,7 +275,7 @@ export function getQueryTools(): ToolDefinition[] {
                 properties: {
                     entityType: {
                         type: "string",
-                        enum: ["workflow", "capability", "persona", "component"],
+                        enum: ["workflow", "capability", "persona", "component", "tokens", "view", "interaction"],
                         description: "Type of entity",
                     },
                     id: {
@@ -245,6 +335,29 @@ export function handleQueryTool(
             return { content: [{ type: "text", text: JSON.stringify(components, null, 2) }] };
         }
 
+        case "design_list_tokens": {
+            const tokens = store.listTokens({
+                extends: args.extends as string | undefined,
+            });
+            return { content: [{ type: "text", text: JSON.stringify(tokens, null, 2) }] };
+        }
+
+        case "design_list_views": {
+            const views = store.listViews({
+                layout_type: args.layout_type as string | undefined,
+                workflow: args.workflow as string | undefined,
+                has_route: args.has_route as boolean | undefined,
+            });
+            return { content: [{ type: "text", text: JSON.stringify(views, null, 2) }] };
+        }
+
+        case "design_list_interactions": {
+            const interactions = store.listInteractions({
+                applies_to: args.applies_to as string | undefined,
+            });
+            return { content: [{ type: "text", text: JSON.stringify(interactions, null, 2) }] };
+        }
+
         case "design_get_workflow": {
             const id = String(args.id);
             const workflow = store.getWorkflow(id);
@@ -291,6 +404,42 @@ export function handleQueryTool(
                 };
             }
             return { content: [{ type: "text", text: JSON.stringify(component, null, 2) }] };
+        }
+
+        case "design_get_tokens": {
+            const id = String(args.id);
+            const tokens = store.getTokens(id);
+            if (!tokens) {
+                return {
+                    content: [{ type: "text", text: `Tokens '${id}' not found` }],
+                    isError: true,
+                };
+            }
+            return { content: [{ type: "text", text: JSON.stringify(tokens, null, 2) }] };
+        }
+
+        case "design_get_view": {
+            const id = String(args.id);
+            const view = store.getView(id);
+            if (!view) {
+                return {
+                    content: [{ type: "text", text: `View '${id}' not found` }],
+                    isError: true,
+                };
+            }
+            return { content: [{ type: "text", text: JSON.stringify(view, null, 2) }] };
+        }
+
+        case "design_get_interaction": {
+            const id = String(args.id);
+            const interaction = store.getInteraction(id);
+            if (!interaction) {
+                return {
+                    content: [{ type: "text", text: `Interaction pattern '${id}' not found` }],
+                    isError: true,
+                };
+            }
+            return { content: [{ type: "text", text: JSON.stringify(interaction, null, 2) }] };
         }
 
         case "design_get_dependencies": {

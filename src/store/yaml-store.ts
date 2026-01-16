@@ -16,10 +16,26 @@ import {
     ComponentSchema,
     type ComponentSummary,
     type ComponentWithResolved,
+    type InteractionPattern,
+    type InteractionPatternFilters,
+    InteractionPatternSchema,
+    type InteractionPatternSummary,
+    type InteractionPatternWithResolved,
     type Persona,
     PersonaSchema,
     type PersonaSummary,
     type PersonaWithResolved,
+    type Source,
+    type Tokens,
+    type TokensFilters,
+    TokensSchema,
+    type TokensSummary,
+    type TokensWithResolved,
+    type View,
+    type ViewFilters,
+    ViewSchema,
+    type ViewSummary,
+    type ViewWithResolved,
     type Workflow,
     type WorkflowFilters,
     WorkflowSchema,
@@ -29,9 +45,92 @@ import {
 import { updateYamlFile,writeYamlFile } from "./yaml-writer.js";
 
 /**
+ * =============================================================================
+ * VERSION METADATA HELPERS
+ * =============================================================================
+ * Auto-manage version, created_at, and updated_at fields on all entities.
+ */
+
+/**
+ * Version metadata fields added to all entities.
+ * Fields are optional for backward compatibility with legacy files.
+ */
+export interface VersionMetadataFields {
+    version?: string;
+    created_at?: string;
+    updated_at?: string;
+}
+
+/**
+ * Get current timestamp in ISO 8601 format.
+ * @returns ISO 8601 formatted timestamp string
+ */
+function getIsoTimestamp(): string {
+    return new Date().toISOString();
+}
+
+/**
+ * Create initial version metadata for new entities.
+ * @returns Version metadata with version 1.0.0 and current timestamps
+ */
+function createVersionMetadata(): Required<VersionMetadataFields> {
+    const now = getIsoTimestamp();
+    return {
+        version: "1.0.0",
+        created_at: now,
+        updated_at: now,
+    };
+}
+
+/**
+ * Increment the patch version (e.g., 1.0.0 -> 1.0.1).
+ * @param version - Semantic version string to increment
+ * @returns Incremented version string
+ */
+function incrementPatchVersion(version: string): string {
+    const parts = version.split(".").map(Number);
+    if (parts.length !== 3 || parts.some(isNaN)) {
+        // Invalid version, reset to 1.0.1
+        return "1.0.1";
+    }
+    parts[2] += 1;
+    return parts.join(".");
+}
+
+/**
+ * Update version metadata for existing entities.
+ * Preserves created_at, updates version and updated_at.
+ * Handles legacy files without version metadata by creating defaults.
+ * @param existing - Existing version metadata to update (fields may be undefined for legacy files)
+ * @returns Updated version metadata with incremented version and new timestamp
+ */
+function updateVersionMetadata(existing: VersionMetadataFields): Required<VersionMetadataFields> {
+    const now = getIsoTimestamp();
+    // Handle legacy files without version metadata
+    if (!existing.version || !existing.created_at || !existing.updated_at) {
+        return {
+            version: existing.version ? incrementPatchVersion(existing.version) : "1.0.0",
+            created_at: existing.created_at ?? now,
+            updated_at: now,
+        };
+    }
+    return {
+        version: incrementPatchVersion(existing.version),
+        created_at: existing.created_at,
+        updated_at: now,
+    };
+}
+
+/**
+ * =============================================================================
+ * TYPE DEFINITIONS
+ * =============================================================================
+ */
+
+/**
  * Entity types for generic operations
  */
-export type EntityType = "workflow" | "capability" | "persona" | "component";
+export type EntityType = "workflow" | "capability" | "persona" | "component" | "tokens" | "view" | "interaction";
 
 /**
  * Dependency information returned by getDependencies
@@ -109,6 +208,7 @@ export interface CreateCapabilityInput {
     used_by_workflows?: string[];
     implemented_by_components?: string[];
     requirements?: string[];
+    sources?: Source[];
 }
 
 /**
@@ -118,15 +218,25 @@ export interface CreatePersonaInput {
     id: string;
     name: string;
     role: string;
+    quote?: string;
+    bio?: string;
     characteristics: {
         expertise: "novice" | "intermediate" | "expert";
         time_pressure?: string;
         graph_literacy?: string;
         domain_knowledge?: string;
     };
+    motivations?: string[];
+    behaviors?: string[];
     goals: string[];
     frustrations?: string[];
+    context?: {
+        frequency?: "daily" | "weekly" | "monthly" | "as-needed";
+        devices?: ("desktop" | "laptop" | "tablet" | "mobile")[];
+        voluntary?: boolean;
+    };
     workflows?: string[];
+    sources?: Source[];
 }
 
 /**
@@ -142,6 +252,7 @@ export interface CreateComponentInput {
     used_in_workflows?: string[];
     dependencies?: string[];
     props?: Record<string, string>;
+    sources?: Source[];
 }
 
 /**
@@ -163,6 +274,7 @@ export interface CreateWorkflowInput {
         user_expertise?: string;
     };
     success_criteria?: Array<{ metric: string; target: string }>;
+    sources?: Source[];
 }
 
 /**
@@ -183,6 +295,7 @@ export interface UpdateWorkflowInput {
         user_expertise?: string;
     };
     success_criteria?: Array<{ metric: string; target: string }>;
+    sources?: Source[];
 }
 
 /**
@@ -195,6 +308,7 @@ export interface UpdateCapabilityInput {
     status?: "planned" | "in-progress" | "implemented" | "deprecated";
     algorithms?: string[];
     requirements?: string[];
+    sources?: Source[];
 }
 
 /**
@@ -203,14 +317,24 @@ export interface UpdateCapabilityInput {
 export interface UpdatePersonaInput {
     name?: string;
     role?: string;
+    quote?: string;
+    bio?: string;
     characteristics?: {
         expertise: "novice" | "intermediate" | "expert";
         time_pressure?: string;
         graph_literacy?: string;
         domain_knowledge?: string;
     };
+    motivations?: string[];
+    behaviors?: string[];
     goals?: string[];
     frustrations?: string[];
+    context?: {
+        frequency?: "daily" | "weekly" | "monthly" | "as-needed";
+        devices?: ("desktop" | "laptop" | "tablet" | "mobile")[];
+        voluntary?: boolean;
+    };
+    sources?: Source[];
 }
 
 /**
@@ -225,6 +349,178 @@ export interface UpdateComponentInput {
     used_in_workflows?: string[];
     dependencies?: string[];
     props?: Record<string, string>;
+    sources?: Source[];
+}
+
+/**
+ * Input for creating tokens
+ */
+export interface CreateTokensInput {
+    id: string;
+    name: string;
+    description?: string;
+    extends?: string;
+    colors: {
+        neutral: Record<string, string>;
+        primary?: Record<string, string>;
+        secondary?: Record<string, string>;
+        semantic?: Record<string, string>;
+        success?: { base: string; light?: string; contrast?: string };
+        warning?: { base: string; light?: string; contrast?: string };
+        error?: { base: string; light?: string; contrast?: string };
+        info?: { base: string; light?: string; contrast?: string };
+    };
+    typography: {
+        fonts: Record<string, string>;
+        sizes: Record<string, string | Record<string, string>>;
+        weights: Record<string, number | string>;
+        line_heights: Record<string, number | string>;
+        styles: Record<string, unknown>;
+    };
+    spacing: {
+        scale: Record<string, string>;
+        semantic?: Record<string, string | Record<string, string>>;
+    };
+    radii?: Record<string, string>;
+    shadows?: Record<string, string>;
+    motion?: {
+        durations?: Record<string, string>;
+        easings?: Record<string, string>;
+    };
+    breakpoints?: Record<string, string>;
+    z_index?: Record<string, number>;
+    sources?: Source[];
+}
+
+/**
+ * Input for updating tokens (all fields optional)
+ */
+export interface UpdateTokensInput {
+    name?: string;
+    description?: string;
+    extends?: string;
+    colors?: CreateTokensInput["colors"];
+    typography?: CreateTokensInput["typography"];
+    spacing?: CreateTokensInput["spacing"];
+    radii?: Record<string, string>;
+    shadows?: Record<string, string>;
+    motion?: CreateTokensInput["motion"];
+    breakpoints?: Record<string, string>;
+    z_index?: Record<string, number>;
+    sources?: Source[];
+}
+
+/**
+ * Input for creating a view
+ */
+export interface CreateViewInput {
+    id: string;
+    name: string;
+    description?: string;
+    workflows?: string[];
+    layout: {
+        type: "single-column" | "sidebar-left" | "sidebar-right" | "dual-sidebar" | "holy-grail" | "dashboard" | "split" | "stacked" | "custom";
+        zones: Array<{
+            id: string;
+            position: "header" | "footer" | "sidebar" | "sidebar-left" | "sidebar-right" | "main" | "aside" | "nav" | "content" | "overlay";
+            components?: string[];
+            width?: string | Record<string, string>;
+            height?: string | Record<string, string>;
+            visibility?: string | Record<string, string>;
+            sticky?: boolean;
+        }>;
+        max_width?: string | Record<string, string>;
+        centered?: boolean;
+        grid_columns?: number;
+    };
+    states?: Array<{
+        id: string;
+        type: "default" | "empty" | "loading" | "error" | "success" | "partial" | "offline" | "forbidden" | "not-found";
+        description?: string;
+        zones?: Array<{
+            zone_id: string;
+            components?: Array<string | { component: string; props?: Record<string, unknown> }>;
+        }>;
+    }>;
+    routes?: Array<{
+        path: string;
+        title?: string;
+        params?: Array<{ name: string; type?: "string" | "number" | "uuid"; required?: boolean }>;
+        requires_auth?: boolean;
+    }>;
+    data_requirements?: Array<{
+        id: string;
+        source: string;
+        required?: boolean;
+        loading_state?: string;
+        error_state?: string;
+    }>;
+    sources?: Source[];
+}
+
+/**
+ * Input for updating a view (all fields optional)
+ */
+export interface UpdateViewInput {
+    name?: string;
+    description?: string;
+    workflows?: string[];
+    layout?: CreateViewInput["layout"];
+    states?: CreateViewInput["states"];
+    routes?: CreateViewInput["routes"];
+    data_requirements?: CreateViewInput["data_requirements"];
+    sources?: Source[];
+}
+
+/**
+ * Input for creating an interaction pattern
+ */
+export interface CreateInteractionInput {
+    id: string;
+    name: string;
+    description?: string;
+    interaction: {
+        states?: Array<{
+            type: string;
+            name?: string;
+            style: Record<string, unknown>;
+            css_pseudo?: string;
+            aria_attribute?: string;
+        }>;
+        transitions?: Array<{
+            from: string | string[];
+            to: string;
+            trigger: string;
+            animation?: {
+                duration?: string;
+                easing?: string;
+                properties?: string[];
+            };
+        }>;
+        microinteractions?: Array<{
+            id: string;
+            trigger: { type: string; target?: string };
+            rules: string[];
+            feedback: Array<{ type: string; description: string }>;
+        }>;
+        accessibility?: {
+            keyboard?: { focusable?: boolean; shortcuts?: Array<{ key: string; action: string }> };
+            aria?: { role?: string; attributes?: Record<string, string> };
+        };
+    };
+    applies_to?: string[];
+    sources?: Source[];
+}
+
+/**
+ * Input for updating an interaction pattern (all fields optional)
+ */
+export interface UpdateInteractionInput {
+    name?: string;
+    description?: string;
+    interaction?: CreateInteractionInput["interaction"];
+    applies_to?: string[];
+    sources?: Source[];
 }
 
 // ============= ANALYSIS TYPES =============
@@ -403,12 +699,18 @@ export class DesignDocsStore {
     private capabilitiesPath: string;
     private personasPath: string;
     private componentsPath: string;
+    private tokensPath: string;
+    private viewsPath: string;
+    private interactionsPath: string;
 
     // Caches for loaded entities
     private workflowCache: Map<string, Workflow> = new Map();
     private capabilityCache: Map<string, Capability> = new Map();
     private personaCache: Map<string, Persona> = new Map();
     private componentCache: Map<string, Component> = new Map();
+    private tokensCache: Map<string, Tokens> = new Map();
+    private viewCache: Map<string, View> = new Map();
+    private interactionCache: Map<string, InteractionPattern> = new Map();
     private cacheLoaded = false;
 
     /**
@@ -421,6 +723,9 @@ export class DesignDocsStore {
         this.capabilitiesPath = path.join(basePath, "capabilities");
         this.personasPath = path.join(basePath, "personas");
         this.componentsPath = path.join(basePath, "components");
+        this.tokensPath = path.join(basePath, "tokens");
+        this.viewsPath = path.join(basePath, "views");
+        this.interactionsPath = path.join(basePath, "interactions");
     }
 
     /**
@@ -435,6 +740,9 @@ export class DesignDocsStore {
         this.loadEntitiesIntoCache(this.capabilitiesPath, CapabilitySchema, this.capabilityCache);
         this.loadEntitiesIntoCache(this.personasPath, PersonaSchema, this.personaCache);
         this.loadEntitiesIntoCache(this.componentsPath, ComponentSchema, this.componentCache);
+        this.loadEntitiesIntoCache(this.tokensPath, TokensSchema, this.tokensCache);
+        this.loadEntitiesIntoCache(this.viewsPath, ViewSchema, this.viewCache);
+        this.loadEntitiesIntoCache(this.interactionsPath, InteractionPatternSchema, this.interactionCache);
 
         this.cacheLoaded = true;
     }
@@ -568,6 +876,77 @@ export class DesignDocsStore {
             name: c.name,
             category: c.category,
             status: c.status ?? "planned",
+        }));
+    }
+
+    /**
+     * List all tokens with optional filters.
+     * @param filters - Optional filters
+     * @returns Array of tokens summaries
+     */
+    listTokens(filters?: TokensFilters): TokensSummary[] {
+        this.ensureCacheLoaded();
+
+        let tokens = Array.from(this.tokensCache.values());
+
+        if (filters?.extends) {
+            tokens = tokens.filter(t => t.extends === filters.extends);
+        }
+
+        return tokens.map(t => ({
+            id: t.id,
+            name: t.name,
+            extends: t.extends,
+        }));
+    }
+
+    /**
+     * List all views with optional filters.
+     * @param filters - Optional filters for layout type, workflow, or route
+     * @returns Array of view summaries
+     */
+    listViews(filters?: ViewFilters): ViewSummary[] {
+        this.ensureCacheLoaded();
+
+        let views = Array.from(this.viewCache.values());
+
+        if (filters?.layout_type) {
+            views = views.filter(v => v.layout.type === filters.layout_type);
+        }
+        if (filters?.workflow) {
+            views = views.filter(v => v.workflows.includes(filters.workflow ?? ""));
+        }
+        if (filters?.has_route !== undefined) {
+            views = views.filter(v => filters.has_route ? (v.routes?.length ?? 0) > 0 : (v.routes?.length ?? 0) === 0);
+        }
+
+        return views.map(v => ({
+            id: v.id,
+            name: v.name,
+            layout_type: v.layout.type,
+            route_count: v.routes?.length ?? 0,
+            state_count: v.states?.length ?? 0,
+        }));
+    }
+
+    /**
+     * List all interaction patterns with optional filters.
+     * @param filters - Optional filters for applies_to
+     * @returns Array of interaction pattern summaries
+     */
+    listInteractions(filters?: InteractionPatternFilters): InteractionPatternSummary[] {
+        this.ensureCacheLoaded();
+
+        let interactions = Array.from(this.interactionCache.values());
+
+        if (filters?.applies_to) {
+            interactions = interactions.filter(i => i.applies_to?.includes(filters.applies_to ?? ""));
+        }
+
+        return interactions.map(i => ({
+            id: i.id,
+            name: i.name,
+            applies_to: i.applies_to ?? [],
         }));
     }
 
@@ -706,6 +1085,98 @@ export class DesignDocsStore {
     }
 
     /**
+     * Get tokens by ID with resolved references.
+     * @param id - Tokens ID
+     * @returns Tokens with resolved references or null if not found
+     */
+    getTokens(id: string): TokensWithResolved | null {
+        this.ensureCacheLoaded();
+
+        const tokens = this.tokensCache.get(id);
+        if (!tokens) {
+            return null;
+        }
+
+        // Resolve extends reference
+        const extendsTheme = tokens.extends
+            ? this.tokensCache.get(tokens.extends)
+            : null;
+
+        return {
+            ...tokens,
+            _resolved: {
+                extends_theme: extendsTheme ? { id: extendsTheme.id, name: extendsTheme.name } : null,
+            },
+        };
+    }
+
+    /**
+     * Get a view by ID with resolved relationships.
+     * @param id - View ID
+     * @returns View with resolved references or null if not found
+     */
+    getView(id: string): ViewWithResolved | null {
+        this.ensureCacheLoaded();
+
+        const view = this.viewCache.get(id);
+        if (!view) {
+            return null;
+        }
+
+        // Collect all component IDs from zones
+        const componentIds = new Set<string>();
+        for (const zone of view.layout.zones) {
+            for (const compId of zone.components ?? []) {
+                componentIds.add(compId);
+            }
+        }
+
+        return {
+            ...view,
+            _resolved: {
+                workflows: view.workflows
+                    .map(wfId => {
+                        const wf = this.workflowCache.get(wfId);
+                        return wf ? { id: wf.id, name: wf.name } : null;
+                    })
+                    .filter((w): w is NonNullable<typeof w> => w !== null),
+                components: Array.from(componentIds)
+                    .map(compId => {
+                        const comp = this.componentCache.get(compId);
+                        return comp ? { id: comp.id, name: comp.name } : null;
+                    })
+                    .filter((c): c is NonNullable<typeof c> => c !== null),
+            },
+        };
+    }
+
+    /**
+     * Get an interaction pattern by ID with resolved relationships.
+     * @param id - Interaction pattern ID
+     * @returns Interaction pattern with resolved references or null if not found
+     */
+    getInteraction(id: string): InteractionPatternWithResolved | null {
+        this.ensureCacheLoaded();
+
+        const interaction = this.interactionCache.get(id);
+        if (!interaction) {
+            return null;
+        }
+
+        // Find components using this interaction pattern
+        const componentsUsing = Array.from(this.componentCache.values())
+            .filter(c => c.interaction_pattern === id)
+            .map(c => ({ id: c.id, name: c.name }));
+
+        return {
+            ...interaction,
+            _resolved: {
+                components_using: componentsUsing,
+            },
+        };
+    }
+
+    /**
      * Check if a workflow exists.
      * @param id - Workflow ID to check
      * @returns True if workflow exists
@@ -743,6 +1214,36 @@ export class DesignDocsStore {
     componentExists(id: string): boolean {
         this.ensureCacheLoaded();
         return this.componentCache.has(id);
+    }
+
+    /**
+     * Check if tokens exist.
+     * @param id - Tokens ID to check
+     * @returns True if tokens exist
+     */
+    tokensExists(id: string): boolean {
+        this.ensureCacheLoaded();
+        return this.tokensCache.has(id);
+    }
+
+    /**
+     * Check if a view exists.
+     * @param id - View ID to check
+     * @returns True if view exists
+     */
+    viewExists(id: string): boolean {
+        this.ensureCacheLoaded();
+        return this.viewCache.has(id);
+    }
+
+    /**
+     * Check if an interaction pattern exists.
+     * @param id - Interaction pattern ID to check
+     * @returns True if interaction pattern exists
+     */
+    interactionExists(id: string): boolean {
+        this.ensureCacheLoaded();
+        return this.interactionCache.has(id);
     }
 
     /**
@@ -880,6 +1381,9 @@ export class DesignDocsStore {
         this.capabilityCache.clear();
         this.personaCache.clear();
         this.componentCache.clear();
+        this.tokensCache.clear();
+        this.viewCache.clear();
+        this.interactionCache.clear();
         this.cacheLoaded = false;
         this.ensureCacheLoaded();
     }
@@ -899,9 +1403,12 @@ export class DesignDocsStore {
             return { success: false, error: `Capability '${data.id}' already exists` };
         }
 
-        // Validate against schema
+        // Validate against schema (add version metadata)
         try {
-            const capability = CapabilitySchema.parse(data);
+            const capability = CapabilitySchema.parse({
+                ...data,
+                ...createVersionMetadata(),
+            });
 
             // Write to file
             writeYamlFile(this.capabilitiesPath, capability.id, capability);
@@ -928,9 +1435,12 @@ export class DesignDocsStore {
             return { success: false, error: `Persona '${data.id}' already exists` };
         }
 
-        // Validate against schema
+        // Validate against schema (add version metadata)
         try {
-            const persona = PersonaSchema.parse(data);
+            const persona = PersonaSchema.parse({
+                ...data,
+                ...createVersionMetadata(),
+            });
 
             // Write to file
             writeYamlFile(this.personasPath, persona.id, persona);
@@ -963,9 +1473,12 @@ export class DesignDocsStore {
             return { success: false, error: refErrors.join("; ") };
         }
 
-        // Validate against schema
+        // Validate against schema (add version metadata)
         try {
-            const component = ComponentSchema.parse(data);
+            const component = ComponentSchema.parse({
+                ...data,
+                ...createVersionMetadata(),
+            });
 
             // Write to file
             writeYamlFile(this.componentsPath, component.id, component);
@@ -1001,9 +1514,12 @@ export class DesignDocsStore {
             return { success: false, error: refErrors.join("; ") };
         }
 
-        // Validate against schema
+        // Validate against schema (add version metadata)
         try {
-            const workflow = WorkflowSchema.parse(data);
+            const workflow = WorkflowSchema.parse({
+                ...data,
+                ...createVersionMetadata(),
+            });
 
             // Write to file
             writeYamlFile(this.workflowsPath, workflow.id, workflow);
@@ -1020,7 +1536,141 @@ export class DesignDocsStore {
         }
     }
 
+    /**
+     * Create new tokens.
+     * @param data - Tokens data to create
+     * @returns Result with success status and optional error message
+     */
+    createTokens(data: CreateTokensInput): CreateResult {
+        this.ensureCacheLoaded();
+
+        // Check for duplicate ID
+        if (this.tokensCache.has(data.id)) {
+            return { success: false, error: `Tokens '${data.id}' already exists` };
+        }
+
+        // Validate extends reference if provided
+        if (data.extends && !this.tokensCache.has(data.extends)) {
+            return { success: false, error: `Tokens '${data.extends}' does not exist (extends reference)` };
+        }
+
+        // Validate against schema (add version metadata)
+        try {
+            const tokens = TokensSchema.parse({
+                ...data,
+                ...createVersionMetadata(),
+            });
+
+            // Write to file
+            writeYamlFile(this.tokensPath, tokens.id, tokens);
+
+            // Update cache
+            this.tokensCache.set(tokens.id, tokens);
+
+            return { success: true };
+        } catch (err) {
+            return { success: false, error: this.formatZodError(err as ZodError) };
+        }
+    }
+
+    /**
+     * Create a new view.
+     * @param data - View data to create
+     * @returns Result with success status and optional error message
+     */
+    createView(data: CreateViewInput): CreateResult {
+        this.ensureCacheLoaded();
+
+        // Check for duplicate ID
+        if (this.viewCache.has(data.id)) {
+            return { success: false, error: `View '${data.id}' already exists` };
+        }
+
+        // Validate workflow references
+        const refErrors = this.validateViewReferences(data);
+        if (refErrors.length > 0) {
+            return { success: false, error: refErrors.join("; ") };
+        }
+
+        // Validate against schema (add version metadata)
+        try {
+            const view = ViewSchema.parse({
+                ...data,
+                ...createVersionMetadata(),
+            });
+
+            // Write to file
+            writeYamlFile(this.viewsPath, view.id, view);
+
+            // Update cache
+            this.viewCache.set(view.id, view);
+
+            return { success: true };
+        } catch (err) {
+            return { success: false, error: this.formatZodError(err as ZodError) };
+        }
+    }
+
+    /**
+     * Create a new interaction pattern.
+     * @param data - Interaction pattern data to create
+     * @returns Result with success status and optional error message
+     */
+    createInteraction(data: CreateInteractionInput): CreateResult {
+        this.ensureCacheLoaded();
+
+        // Check for duplicate ID
+        if (this.interactionCache.has(data.id)) {
+            return { success: false, error: `Interaction pattern '${data.id}' already exists` };
+        }
+
+        // Validate against schema (add version metadata)
+        try {
+            const interaction = InteractionPatternSchema.parse({
+                ...data,
+                ...createVersionMetadata(),
+            });
+
+            // Write to file
+            writeYamlFile(this.interactionsPath, interaction.id, interaction);
+
+            // Update cache
+            this.interactionCache.set(interaction.id, interaction);
+
+            return { success: true };
+        } catch (err) {
+            return { success: false, error: this.formatZodError(err as ZodError) };
+        }
+    }
+
     // ============= VALIDATION HELPERS =============
+
+    /**
+     * Validate view references (workflows, components).
+     * @param data - View data to validate
+     * @returns Array of error messages (empty if all valid)
+     */
+    private validateViewReferences(data: CreateViewInput): string[] {
+        const errors: string[] = [];
+
+        // Check workflows
+        for (const wfId of data.workflows ?? []) {
+            if (!this.workflowCache.has(wfId)) {
+                errors.push(`Workflow '${wfId}' does not exist`);
+            }
+        }
+
+        // Check components in zones
+        for (const zone of data.layout.zones) {
+            for (const compId of zone.components ?? []) {
+                if (!this.componentCache.has(compId)) {
+                    errors.push(`Component '${compId}' does not exist (in zone '${zone.id}')`);
+                }
+            }
+        }
+
+        return errors;
+    }
 
     /**
      * Validate workflow references (capabilities, personas, components).
@@ -1210,31 +1860,39 @@ export class DesignDocsStore {
         const oldPersonas = [...existing.personas];
         const oldComponents = [...existing.suggested_components];
 
-        // Merge updates with existing data
-        const updated: Workflow = {
+        // Merge updates with existing data (update version metadata)
+        const merged = {
             ...existing,
             ...updates,
+            ...updateVersionMetadata(existing),
         };
 
-        // Update cache
-        this.workflowCache.set(id, updated);
+        // Validate merged data against schema
+        try {
+            const updated = WorkflowSchema.parse(merged);
 
-        // Write to file
-        const filePath = path.join(this.workflowsPath, `${id}.yaml`);
-        updateYamlFile(filePath, updated);
+            // Update cache
+            this.workflowCache.set(id, updated);
 
-        // Update reverse relationships if references changed
-        if (updates.requires_capabilities) {
-            this.updateCapabilityWorkflowRefs(id, oldCapabilities, updates.requires_capabilities);
-        }
-        if (updates.personas) {
-            this.updatePersonaWorkflowRefs(id, oldPersonas, updates.personas);
-        }
-        if (updates.suggested_components) {
-            this.updateComponentWorkflowRefs(id, oldComponents, updates.suggested_components);
-        }
+            // Write to file
+            const filePath = path.join(this.workflowsPath, `${id}.yaml`);
+            updateYamlFile(filePath, updated);
 
-        return { success: true };
+            // Update reverse relationships if references changed
+            if (updates.requires_capabilities) {
+                this.updateCapabilityWorkflowRefs(id, oldCapabilities, updates.requires_capabilities);
+            }
+            if (updates.personas) {
+                this.updatePersonaWorkflowRefs(id, oldPersonas, updates.personas);
+            }
+            if (updates.suggested_components) {
+                this.updateComponentWorkflowRefs(id, oldComponents, updates.suggested_components);
+            }
+
+            return { success: true };
+        } catch (err) {
+            return { success: false, error: this.formatZodError(err as ZodError) };
+        }
     }
 
     /**
@@ -1251,20 +1909,28 @@ export class DesignDocsStore {
             return { success: false, error: `Capability '${id}' not found` };
         }
 
-        // Merge updates with existing data (preserve relationship fields)
-        const updated: Capability = {
+        // Merge updates with existing data (update version metadata)
+        const merged = {
             ...existing,
             ...updates,
+            ...updateVersionMetadata(existing),
         };
 
-        // Update cache
-        this.capabilityCache.set(id, updated);
+        // Validate merged data against schema
+        try {
+            const updated = CapabilitySchema.parse(merged);
 
-        // Write to file
-        const filePath = path.join(this.capabilitiesPath, `${id}.yaml`);
-        updateYamlFile(filePath, updated);
+            // Update cache
+            this.capabilityCache.set(id, updated);
 
-        return { success: true };
+            // Write to file
+            const filePath = path.join(this.capabilitiesPath, `${id}.yaml`);
+            updateYamlFile(filePath, updated);
+
+            return { success: true };
+        } catch (err) {
+            return { success: false, error: this.formatZodError(err as ZodError) };
+        }
     }
 
     /**
@@ -1281,20 +1947,28 @@ export class DesignDocsStore {
             return { success: false, error: `Persona '${id}' not found` };
         }
 
-        // Merge updates with existing data (preserve relationship fields)
-        const updated: Persona = {
+        // Merge updates with existing data (update version metadata)
+        const merged = {
             ...existing,
             ...updates,
+            ...updateVersionMetadata(existing),
         };
 
-        // Update cache
-        this.personaCache.set(id, updated);
+        // Validate merged data against schema
+        try {
+            const updated = PersonaSchema.parse(merged);
 
-        // Write to file
-        const filePath = path.join(this.personasPath, `${id}.yaml`);
-        updateYamlFile(filePath, updated);
+            // Update cache
+            this.personaCache.set(id, updated);
 
-        return { success: true };
+            // Write to file
+            const filePath = path.join(this.personasPath, `${id}.yaml`);
+            updateYamlFile(filePath, updated);
+
+            return { success: true };
+        } catch (err) {
+            return { success: false, error: this.formatZodError(err as ZodError) };
+        }
     }
 
     /**
@@ -1330,25 +2004,172 @@ export class DesignDocsStore {
         // Track old references for reverse relationship cleanup
         const oldCapabilities = [...existing.implements_capabilities];
 
-        // Merge updates with existing data
-        const updated: Component = {
+        // Merge updates with existing data (update version metadata)
+        const merged = {
             ...existing,
             ...updates,
+            ...updateVersionMetadata(existing),
         };
 
-        // Update cache
-        this.componentCache.set(id, updated);
+        // Validate merged data against schema
+        try {
+            const updated = ComponentSchema.parse(merged);
 
-        // Write to file
-        const filePath = path.join(this.componentsPath, `${id}.yaml`);
-        updateYamlFile(filePath, updated);
+            // Update cache
+            this.componentCache.set(id, updated);
 
-        // Update reverse relationships if capability references changed
-        if (updates.implements_capabilities) {
-            this.updateCapabilityComponentRefs(id, oldCapabilities, updates.implements_capabilities);
+            // Write to file
+            const filePath = path.join(this.componentsPath, `${id}.yaml`);
+            updateYamlFile(filePath, updated);
+
+            // Update reverse relationships if capability references changed
+            if (updates.implements_capabilities) {
+                this.updateCapabilityComponentRefs(id, oldCapabilities, updates.implements_capabilities);
+            }
+
+            return { success: true };
+        } catch (err) {
+            return { success: false, error: this.formatZodError(err as ZodError) };
+        }
+    }
+
+    /**
+     * Update existing tokens.
+     * @param id - Tokens ID to update
+     * @param updates - Fields to update
+     * @returns Result with success status and optional error message
+     */
+    updateTokens(id: string, updates: UpdateTokensInput): UpdateResult {
+        this.ensureCacheLoaded();
+
+        const existing = this.tokensCache.get(id);
+        if (!existing) {
+            return { success: false, error: `Tokens '${id}' not found` };
         }
 
-        return { success: true };
+        // Validate extends reference if being updated
+        if (updates.extends !== undefined && updates.extends && !this.tokensCache.has(updates.extends)) {
+            return { success: false, error: `Tokens '${updates.extends}' does not exist (extends reference)` };
+        }
+
+        // Merge updates with existing data (update version metadata)
+        const merged = {
+            ...existing,
+            ...updates,
+            ...updateVersionMetadata(existing),
+        };
+
+        // Validate merged data against schema
+        try {
+            const updated = TokensSchema.parse(merged);
+
+            // Update cache
+            this.tokensCache.set(id, updated);
+
+            // Write to file
+            const filePath = path.join(this.tokensPath, `${id}.yaml`);
+            updateYamlFile(filePath, updated);
+
+            return { success: true };
+        } catch (err) {
+            return { success: false, error: this.formatZodError(err as ZodError) };
+        }
+    }
+
+    /**
+     * Update an existing view.
+     * @param id - View ID to update
+     * @param updates - Fields to update
+     * @returns Result with success status and optional error message
+     */
+    updateView(id: string, updates: UpdateViewInput): UpdateResult {
+        this.ensureCacheLoaded();
+
+        const existing = this.viewCache.get(id);
+        if (!existing) {
+            return { success: false, error: `View '${id}' not found` };
+        }
+
+        // Validate workflow references if being updated
+        if (updates.workflows) {
+            for (const wfId of updates.workflows) {
+                if (!this.workflowCache.has(wfId)) {
+                    return { success: false, error: `Workflow '${wfId}' does not exist` };
+                }
+            }
+        }
+
+        // Validate component references in zones if layout is being updated
+        if (updates.layout?.zones) {
+            for (const zone of updates.layout.zones) {
+                for (const compId of zone.components ?? []) {
+                    if (!this.componentCache.has(compId)) {
+                        return { success: false, error: `Component '${compId}' does not exist (in zone '${zone.id}')` };
+                    }
+                }
+            }
+        }
+
+        // Merge updates with existing data (update version metadata)
+        const merged = {
+            ...existing,
+            ...updates,
+            ...updateVersionMetadata(existing),
+        };
+
+        // Validate merged data against schema
+        try {
+            const updated = ViewSchema.parse(merged);
+
+            // Update cache
+            this.viewCache.set(id, updated);
+
+            // Write to file
+            const filePath = path.join(this.viewsPath, `${id}.yaml`);
+            updateYamlFile(filePath, updated);
+
+            return { success: true };
+        } catch (err) {
+            return { success: false, error: this.formatZodError(err as ZodError) };
+        }
+    }
+
+    /**
+     * Update an existing interaction pattern.
+     * @param id - Interaction pattern ID to update
+     * @param updates - Fields to update
+     * @returns Result with success status and optional error message
+     */
+    updateInteraction(id: string, updates: UpdateInteractionInput): UpdateResult {
+        this.ensureCacheLoaded();
+
+        const existing = this.interactionCache.get(id);
+        if (!existing) {
+            return { success: false, error: `Interaction pattern '${id}' not found` };
+        }
+
+        // Merge updates with existing data (update version metadata)
+        const merged = {
+            ...existing,
+            ...updates,
+            ...updateVersionMetadata(existing),
+        };
+
+        // Validate merged data against schema
+        try {
+            const updated = InteractionPatternSchema.parse(merged);
+
+            // Update cache
+            this.interactionCache.set(id, updated);
+
+            // Write to file
+            const filePath = path.join(this.interactionsPath, `${id}.yaml`);
+            updateYamlFile(filePath, updated);
+
+            return { success: true };
+        } catch (err) {
+            return { success: false, error: this.formatZodError(err as ZodError) };
+        }
     }
 
     // ============= DELETE OPERATIONS =============
@@ -1565,6 +2386,116 @@ export class DesignDocsStore {
         return { success: true };
     }
 
+    /**
+     * Delete tokens.
+     * @param id - Tokens ID to delete
+     * @param options - Delete options (force to skip dependency check)
+     * @returns Result with success status and optional error message
+     */
+    deleteTokens(id: string, options?: DeleteOptions): DeleteResult {
+        this.ensureCacheLoaded();
+
+        const existing = this.tokensCache.get(id);
+        if (!existing) {
+            return { success: false, error: `Tokens '${id}' not found` };
+        }
+
+        // Check for tokens that extend this one
+        const dependentTokens = Array.from(this.tokensCache.values())
+            .filter(t => t.extends === id);
+
+        if (dependentTokens.length > 0 && !options?.force) {
+            const deps = dependentTokens.map(t => t.id).join(", ");
+            return {
+                success: false,
+                error: `Cannot delete tokens '${id}': extended by ${deps}. Use force option to delete anyway.`,
+            };
+        }
+
+        // Remove from cache
+        this.tokensCache.delete(id);
+
+        // Delete file
+        const filePath = path.join(this.tokensPath, `${id}.yaml`);
+        if (fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
+        }
+
+        return { success: true };
+    }
+
+    /**
+     * Delete a view.
+     * @param id - View ID to delete
+     * @returns Result with success status and optional error message
+     */
+    deleteView(id: string): DeleteResult {
+        this.ensureCacheLoaded();
+
+        const existing = this.viewCache.get(id);
+        if (!existing) {
+            return { success: false, error: `View '${id}' not found` };
+        }
+
+        // Remove from cache
+        this.viewCache.delete(id);
+
+        // Delete file
+        const filePath = path.join(this.viewsPath, `${id}.yaml`);
+        if (fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
+        }
+
+        return { success: true };
+    }
+
+    /**
+     * Delete an interaction pattern.
+     * @param id - Interaction pattern ID to delete
+     * @param options - Delete options (force to skip dependency check)
+     * @returns Result with success status and optional error message
+     */
+    deleteInteraction(id: string, options?: DeleteOptions): DeleteResult {
+        this.ensureCacheLoaded();
+
+        const existing = this.interactionCache.get(id);
+        if (!existing) {
+            return { success: false, error: `Interaction pattern '${id}' not found` };
+        }
+
+        // Check for components using this interaction pattern
+        const usingComponents = Array.from(this.componentCache.values())
+            .filter(c => c.interaction_pattern === id);
+
+        if (usingComponents.length > 0 && !options?.force) {
+            const deps = usingComponents.map(c => c.id).join(", ");
+            return {
+                success: false,
+                error: `Cannot delete interaction pattern '${id}': used by components ${deps}. Use force option to delete anyway.`,
+            };
+        }
+
+        // If force deleting, clean up references in components
+        if (options?.force && usingComponents.length > 0) {
+            for (const comp of usingComponents) {
+                comp.interaction_pattern = undefined;
+                const compPath = path.join(this.componentsPath, `${comp.id}.yaml`);
+                updateYamlFile(compPath, comp);
+            }
+        }
+
+        // Remove from cache
+        this.interactionCache.delete(id);
+
+        // Delete file
+        const filePath = path.join(this.interactionsPath, `${id}.yaml`);
+        if (fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
+        }
+
+        return { success: true };
+    }
+
     // ============= LINK OPERATIONS =============
 
     /**
@@ -1653,6 +2584,12 @@ export class DesignDocsStore {
                 return this.personaCache.has(id);
             case "component":
                 return this.componentCache.has(id);
+            case "tokens":
+                return this.tokensCache.has(id);
+            case "view":
+                return this.viewCache.has(id);
+            case "interaction":
+                return this.interactionCache.has(id);
             default:
                 return false;
         }

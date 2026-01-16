@@ -2,13 +2,28 @@ import { execSync } from "node:child_process";
 import * as path from "node:path";
 
 /**
+ * Get the working directory to use for git commands.
+ * Uses DESIGNLOOM_GIT_CWD env variable if set (for MCP servers where cwd may not be respected),
+ * otherwise falls back to process.cwd().
+ * @returns Directory path to use for git operations
+ */
+function getGitWorkingDirectory(): string {
+    return process.env.DESIGNLOOM_GIT_CWD ?? process.cwd();
+}
+
+/**
  * Execute a git command and return the trimmed output.
+ * Uses getGitWorkingDirectory() to ensure correct working directory in spawned processes (e.g., MCP servers).
  * @param command - Git command arguments
  * @returns Output string or null on error
  */
 function execGitCommand(command: string): string | null {
     try {
-        const result = execSync(command, { encoding: "utf-8", stdio: ["pipe", "pipe", "pipe"] });
+        const result = execSync(command, {
+            encoding: "utf-8",
+            stdio: ["pipe", "pipe", "pipe"],
+            cwd: getGitWorkingDirectory(),
+        });
         return result.trim();
     } catch {
         return null;
@@ -75,6 +90,6 @@ export function resolveDataPath(configuredPath: string): string {
         return path.join(mainRepoPath, normalizedPath);
     }
 
-    // Not in a worktree (or not a git repo) - resolve relative to cwd
-    return path.resolve(process.cwd(), configuredPath);
+    // Not in a worktree (or not a git repo) - resolve relative to git working directory
+    return path.resolve(getGitWorkingDirectory(), configuredPath);
 }
