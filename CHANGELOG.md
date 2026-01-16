@@ -1,3 +1,10 @@
+## [1.0.1](https://github.com/apowers313/designloom/compare/v1.0.0...v1.0.1) (2026-01-13)
+
+
+### Bug Fixes
+
+* fix semantic release by making package public ([0479d03](https://github.com/apowers313/designloom/commit/0479d03b5fd72e5308cbca7f568fd7940088ee67))
+
 # 1.0.0 (2026-01-13)
 
 
