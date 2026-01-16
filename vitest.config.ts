@@ -24,6 +24,10 @@ export default defineConfig({
                 "**/*.test.ts",
                 "**/*.spec.ts",
                 "**/types/**",
+                // Browser UI and CLI entry points are integration-level code
+                // that require running actual servers to test meaningfully
+                "src/browser/**",
+                "src/cli.ts",
             ],
             thresholds: {
                 lines: 80,
