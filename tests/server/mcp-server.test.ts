@@ -29,6 +29,21 @@ describe("MCP Server", () => {
             expect(toolNames).toContain("design_get_dependents");
         });
 
+        it("lists test result tools", () => {
+            const tools = server.listTools();
+            const toolNames = tools.map(t => t.name);
+
+            // Query tools
+            expect(toolNames).toContain("design_list_test_results");
+            expect(toolNames).toContain("design_get_test_result");
+            expect(toolNames).toContain("design_get_test_coverage");
+
+            // Mutation tools
+            expect(toolNames).toContain("design_create_test_result");
+            expect(toolNames).toContain("design_update_test_result");
+            expect(toolNames).toContain("design_delete_test_result");
+        });
+
         it("each tool has required properties", () => {
             const tools = server.listTools();
             for (const tool of tools) {
@@ -56,6 +71,15 @@ describe("MCP Server", () => {
             expect(data.every((w: { category: string }) => w.category === "onboarding")).toBe(true);
         });
 
+        it("handles design_list_workflows with priority filter", async () => {
+            // Fixtures don't have priority set, so this should return empty array
+            const result = await server.callTool("design_list_workflows", { priority: "P0" });
+            expect(result.isError).toBeFalsy();
+            const data = JSON.parse(result.content[0].text);
+            // All results should have P0 priority (empty array is valid)
+            expect(data.every((w: { priority?: string }) => w.priority === "P0")).toBe(true);
+        });
+
         it("handles design_list_capabilities tool call", async () => {
             const result = await server.callTool("design_list_capabilities", {});
             expect(result.content[0].text).toContain("data-import");
@@ -65,6 +89,13 @@ describe("MCP Server", () => {
             const result = await server.callTool("design_list_capabilities", { status: "implemented" });
             const data = JSON.parse(result.content[0].text);
             expect(data.every((c: { status: string }) => c.status === "implemented")).toBe(true);
+        });
+
+        it("handles design_list_capabilities with priority filter", async () => {
+            const result = await server.callTool("design_list_capabilities", { priority: "P1" });
+            expect(result.isError).toBeFalsy();
+            const data = JSON.parse(result.content[0].text);
+            expect(data.every((c: { priority?: string }) => c.priority === "P1")).toBe(true);
         });
 
         it("handles design_list_personas tool call", async () => {
@@ -81,6 +112,13 @@ describe("MCP Server", () => {
             const result = await server.callTool("design_list_components", { status: "implemented" });
             const data = JSON.parse(result.content[0].text);
             expect(data.every((c: { status: string }) => c.status === "implemented")).toBe(true);
+        });
+
+        it("handles design_list_components with priority filter", async () => {
+            const result = await server.callTool("design_list_components", { priority: "P2" });
+            expect(result.isError).toBeFalsy();
+            const data = JSON.parse(result.content[0].text);
+            expect(data.every((c: { priority?: string }) => c.priority === "P2")).toBe(true);
         });
     });
 

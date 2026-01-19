@@ -101,6 +101,14 @@ export function getAnalysisTools(): ToolDefinition[] {
                 required: ["focus"],
             },
         },
+        {
+            name: "design_check_schema_versions",
+            description: "Check all entities for schema version mismatches. Returns warnings for entities that were created with older schema versions or are missing schema_version field (legacy files).",
+            inputSchema: {
+                type: "object",
+                properties: {},
+            },
+        },
     ];
 }
 
@@ -182,6 +190,24 @@ export function handleAnalysisTool(
             const diagramOptions: DiagramOptions = { focus, depth };
             const diagram = store.exportDiagram(diagramOptions);
             return { content: [{ type: "text", text: diagram }] };
+        }
+
+        case "design_check_schema_versions": {
+            const warnings = store.getSchemaWarnings();
+            const summary = {
+                totalWarnings: warnings.length,
+                byEntityType: {} as Record<string, number>,
+                bySeverity: {} as Record<string, number>,
+                warnings: warnings,
+            };
+
+            // Group by entity type
+            for (const warning of warnings) {
+                summary.byEntityType[warning.entityType] = (summary.byEntityType[warning.entityType] ?? 0) + 1;
+                summary.bySeverity[warning.severity] = (summary.bySeverity[warning.severity] ?? 0) + 1;
+            }
+
+            return { content: [{ type: "text", text: JSON.stringify(summary, null, 2) }] };
         }
 
         default:

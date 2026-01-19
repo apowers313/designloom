@@ -30,13 +30,18 @@ export function getQueryTools(): ToolDefinition[] {
     return [
         {
             name: "design_list_workflows",
-            description: "List all workflows with optional filtering by category, validated status, persona, or capability",
+            description: "List all workflows with optional filtering by category, priority, validated status, persona, or capability",
             inputSchema: {
                 type: "object",
                 properties: {
                     category: {
                         type: "string",
                         description: "Filter by category (onboarding, analysis, exploration, reporting, collaboration, administration)",
+                    },
+                    priority: {
+                        type: "string",
+                        enum: ["P0", "P1", "P2"],
+                        description: "Filter by priority (P0=critical, P1=important, P2=nice-to-have)",
                     },
                     validated: {
                         type: "boolean",
@@ -55,7 +60,7 @@ export function getQueryTools(): ToolDefinition[] {
         },
         {
             name: "design_list_capabilities",
-            description: "List all capabilities with optional filtering by category, status, or workflow",
+            description: "List all capabilities with optional filtering by category, status, priority, or workflow",
             inputSchema: {
                 type: "object",
                 properties: {
@@ -66,6 +71,11 @@ export function getQueryTools(): ToolDefinition[] {
                     status: {
                         type: "string",
                         description: "Filter by status (planned, in-progress, implemented, deprecated)",
+                    },
+                    priority: {
+                        type: "string",
+                        enum: ["P0", "P1", "P2"],
+                        description: "Filter by priority (P0=critical, P1=important, P2=nice-to-have)",
                     },
                     workflow: {
                         type: "string",
@@ -84,7 +94,7 @@ export function getQueryTools(): ToolDefinition[] {
         },
         {
             name: "design_list_components",
-            description: "List all components with optional filtering by category, status, or capability",
+            description: "List all components with optional filtering by category, status, priority, or capability",
             inputSchema: {
                 type: "object",
                 properties: {
@@ -95,6 +105,11 @@ export function getQueryTools(): ToolDefinition[] {
                     status: {
                         type: "string",
                         description: "Filter by status (planned, in-progress, implemented, deprecated)",
+                    },
+                    priority: {
+                        type: "string",
+                        enum: ["P0", "P1", "P2"],
+                        description: "Filter by priority (P0=critical, P1=important, P2=nice-to-have)",
                     },
                     capability: {
                         type: "string",
@@ -118,13 +133,18 @@ export function getQueryTools(): ToolDefinition[] {
         },
         {
             name: "design_list_views",
-            description: "List all views with optional filtering by layout type, workflow, or route presence",
+            description: "List all views with optional filtering by layout type, priority, workflow, or route presence",
             inputSchema: {
                 type: "object",
                 properties: {
                     layout_type: {
                         type: "string",
                         description: "Filter by layout type (single-column, sidebar-left, dashboard, etc.)",
+                    },
+                    priority: {
+                        type: "string",
+                        enum: ["P0", "P1", "P2"],
+                        description: "Filter by priority (P0=critical, P1=important, P2=nice-to-have)",
                     },
                     workflow: {
                         type: "string",
@@ -146,6 +166,37 @@ export function getQueryTools(): ToolDefinition[] {
                     applies_to: {
                         type: "string",
                         description: "Filter by component category this pattern applies to",
+                    },
+                },
+            },
+        },
+        {
+            name: "design_list_test_results",
+            description: "List all test results with optional filtering by workflow, persona, test type, or status",
+            inputSchema: {
+                type: "object",
+                properties: {
+                    workflow_id: {
+                        type: "string",
+                        description: "Filter by workflow ID (e.g., W01)",
+                    },
+                    persona_id: {
+                        type: "string",
+                        description: "Filter by persona ID (e.g., analyst-alex)",
+                    },
+                    test_type: {
+                        type: "string",
+                        enum: ["simulated", "real"],
+                        description: "Filter by test type",
+                    },
+                    status: {
+                        type: "string",
+                        enum: ["passed", "failed", "partial"],
+                        description: "Filter by test status",
+                    },
+                    has_issues: {
+                        type: "boolean",
+                        description: "Filter by whether test has issues",
                     },
                 },
             },
@@ -249,6 +300,28 @@ export function getQueryTools(): ToolDefinition[] {
             },
         },
         {
+            name: "design_get_test_result",
+            description: "Get a test result by ID with resolved workflow and persona references",
+            inputSchema: {
+                type: "object",
+                properties: {
+                    id: {
+                        type: "string",
+                        description: "TestResult ID (e.g., TR-W01-analyst-alex-001)",
+                    },
+                },
+                required: ["id"],
+            },
+        },
+        {
+            name: "design_get_test_coverage",
+            description: "Get test coverage report showing which workflow-persona combinations have been tested",
+            inputSchema: {
+                type: "object",
+                properties: {},
+            },
+        },
+        {
             name: "design_get_dependencies",
             description: "Get all entities that the specified entity depends on",
             inputSchema: {
@@ -305,6 +378,7 @@ export function handleQueryTool(
         case "design_list_workflows": {
             const workflows = store.listWorkflows({
                 category: args.category as string | undefined,
+                priority: args.priority as string | undefined,
                 validated: args.validated as boolean | undefined,
                 persona: args.persona as string | undefined,
                 capability: args.capability as string | undefined,
@@ -316,6 +390,7 @@ export function handleQueryTool(
             const capabilities = store.listCapabilities({
                 category: args.category as string | undefined,
                 status: args.status as string | undefined,
+                priority: args.priority as string | undefined,
                 workflow: args.workflow as string | undefined,
             });
             return { content: [{ type: "text", text: JSON.stringify(capabilities, null, 2) }] };
@@ -330,6 +405,7 @@ export function handleQueryTool(
             const components = store.listComponents({
                 category: args.category as string | undefined,
                 status: args.status as string | undefined,
+                priority: args.priority as string | undefined,
                 capability: args.capability as string | undefined,
             });
             return { content: [{ type: "text", text: JSON.stringify(components, null, 2) }] };
@@ -345,6 +421,7 @@ export function handleQueryTool(
         case "design_list_views": {
             const views = store.listViews({
                 layout_type: args.layout_type as string | undefined,
+                priority: args.priority as string | undefined,
                 workflow: args.workflow as string | undefined,
                 has_route: args.has_route as boolean | undefined,
             });
@@ -356,6 +433,17 @@ export function handleQueryTool(
                 applies_to: args.applies_to as string | undefined,
             });
             return { content: [{ type: "text", text: JSON.stringify(interactions, null, 2) }] };
+        }
+
+        case "design_list_test_results": {
+            const testResults = store.listTestResults({
+                workflow_id: args.workflow_id as string | undefined,
+                persona_id: args.persona_id as string | undefined,
+                test_type: args.test_type as "simulated" | "real" | undefined,
+                status: args.status as "passed" | "failed" | "partial" | undefined,
+                has_issues: args.has_issues as boolean | undefined,
+            });
+            return { content: [{ type: "text", text: JSON.stringify(testResults, null, 2) }] };
         }
 
         case "design_get_workflow": {
@@ -440,6 +528,23 @@ export function handleQueryTool(
                 };
             }
             return { content: [{ type: "text", text: JSON.stringify(interaction, null, 2) }] };
+        }
+
+        case "design_get_test_result": {
+            const id = String(args.id);
+            const testResult = store.getTestResult(id);
+            if (!testResult) {
+                return {
+                    content: [{ type: "text", text: `Test result '${id}' not found` }],
+                    isError: true,
+                };
+            }
+            return { content: [{ type: "text", text: JSON.stringify(testResult, null, 2) }] };
+        }
+
+        case "design_get_test_coverage": {
+            const coverage = store.getTestCoverage();
+            return { content: [{ type: "text", text: JSON.stringify(coverage, null, 2) }] };
         }
 
         case "design_get_dependencies": {

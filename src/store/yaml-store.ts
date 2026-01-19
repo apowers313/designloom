@@ -26,6 +26,13 @@ import {
     type PersonaSummary,
     type PersonaWithResolved,
     type Source,
+    type TestCoverageEntry,
+    type TestCoverageReport,
+    type TestResult,
+    type TestResultFilters,
+    TestResultSchema,
+    type TestResultSummary,
+    type TestResultWithResolved,
     type Tokens,
     type TokensFilters,
     TokensSchema,
@@ -42,6 +49,11 @@ import {
     type WorkflowSummary,
     type WorkflowWithResolved,
 } from "../schemas/index.js";
+import {
+    createSchemaWarning,
+    CURRENT_SCHEMA_VERSION,
+    type SchemaVersionWarning,
+} from "../schemas/version.js";
 import { updateYamlFile,writeYamlFile } from "./yaml-writer.js";
 
 /**
@@ -57,6 +69,7 @@ import { updateYamlFile,writeYamlFile } from "./yaml-writer.js";
  */
 export interface VersionMetadataFields {
     version?: string;
+    schema_version?: string;
     created_at?: string;
     updated_at?: string;
 }
@@ -77,6 +90,7 @@ function createVersionMetadata(): Required<VersionMetadataFields> {
     const now = getIsoTimestamp();
     return {
         version: "1.0.0",
+        schema_version: CURRENT_SCHEMA_VERSION,
         created_at: now,
         updated_at: now,
     };
@@ -110,12 +124,14 @@ function updateVersionMetadata(existing: VersionMetadataFields): Required<Versio
     if (!existing.version || !existing.created_at || !existing.updated_at) {
         return {
             version: existing.version ? incrementPatchVersion(existing.version) : "1.0.0",
+            schema_version: CURRENT_SCHEMA_VERSION,
             created_at: existing.created_at ?? now,
             updated_at: now,
         };
     }
     return {
         version: incrementPatchVersion(existing.version),
+        schema_version: CURRENT_SCHEMA_VERSION,
         created_at: existing.created_at,
         updated_at: now,
     };
@@ -130,7 +146,7 @@ function updateVersionMetadata(existing: VersionMetadataFields): Required<Versio
 /**
  * Entity types for generic operations
  */
-export type EntityType = "workflow" | "capability" | "persona" | "component" | "tokens" | "view" | "interaction";
+export type EntityType = "workflow" | "capability" | "persona" | "component" | "tokens" | "view" | "interaction" | "test-result";
 
 /**
  * Dependency information returned by getDependencies
@@ -523,6 +539,56 @@ export interface UpdateInteractionInput {
     sources?: Source[];
 }
 
+/**
+ * Input for creating a test result
+ */
+export interface CreateTestResultInput {
+    id: string;
+    workflow_id: string;
+    persona_id: string;
+    test_type: "simulated" | "real";
+    date: string;
+    status: "passed" | "failed" | "partial";
+    confidence?: "high" | "medium" | "low";
+    success_criteria_results?: Array<{
+        criterion: string;
+        target: string;
+        actual?: string;
+        passed: boolean;
+        notes?: string;
+    }>;
+    issues?: Array<{
+        severity: "critical" | "major" | "minor";
+        description: string;
+        workflow_step?: string;
+        persona_factor?: string;
+        affected_components?: string[];
+        affected_capabilities?: string[];
+        recommendation?: string;
+        evidence?: string;
+    }>;
+    summary?: string;
+    participants?: number;
+    quotes?: string[];
+    recommendations?: string[];
+    sources?: Source[];
+}
+
+/**
+ * Input for updating a test result (all fields optional except id)
+ */
+export interface UpdateTestResultInput {
+    status?: "passed" | "failed" | "partial";
+    confidence?: "high" | "medium" | "low";
+    success_criteria_results?: CreateTestResultInput["success_criteria_results"];
+    issues?: CreateTestResultInput["issues"];
+    summary?: string;
+    participants?: number;
+    quotes?: string[];
+    recommendations?: string[];
+    sources?: Source[];
+}
+
 // ============= ANALYSIS TYPES =============
 
 /**
@@ -702,6 +768,7 @@ export class DesignDocsStore {
     private tokensPath: string;
     private viewsPath: string;
     private interactionsPath: string;
+    private testResultsPath: string;
 
     // Caches for loaded entities
     private workflowCache: Map<string, Workflow> = new Map();
@@ -711,7 +778,9 @@ export class DesignDocsStore {
     private tokensCache: Map<string, Tokens> = new Map();
     private viewCache: Map<string, View> = new Map();
     private interactionCache: Map<string, InteractionPattern> = new Map();
+    private testResultCache: Map<string, TestResult> = new Map();
     private cacheLoaded = false;
+    private schemaWarnings: SchemaVersionWarning[] = [];
 
     /**
      * Creates a new DesignDocsStore instance.
@@ -726,6 +795,7 @@ export class DesignDocsStore {
         this.tokensPath = path.join(basePath, "tokens");
         this.viewsPath = path.join(basePath, "views");
         this.interactionsPath = path.join(basePath, "interactions");
+        this.testResultsPath = path.join(basePath, "test-results");
     }
 
     /**
@@ -736,13 +806,17 @@ export class DesignDocsStore {
             return;
         }
 
-        this.loadEntitiesIntoCache(this.workflowsPath, WorkflowSchema, this.workflowCache);
-        this.loadEntitiesIntoCache(this.capabilitiesPath, CapabilitySchema, this.capabilityCache);
-        this.loadEntitiesIntoCache(this.personasPath, PersonaSchema, this.personaCache);
-        this.loadEntitiesIntoCache(this.componentsPath, ComponentSchema, this.componentCache);
-        this.loadEntitiesIntoCache(this.tokensPath, TokensSchema, this.tokensCache);
-        this.loadEntitiesIntoCache(this.viewsPath, ViewSchema, this.viewCache);
-        this.loadEntitiesIntoCache(this.interactionsPath, InteractionPatternSchema, this.interactionCache);
+        // Clear warnings before reloading
+        this.schemaWarnings = [];
+
+        this.loadEntitiesIntoCache(this.workflowsPath, WorkflowSchema, this.workflowCache, "workflow");
+        this.loadEntitiesIntoCache(this.capabilitiesPath, CapabilitySchema, this.capabilityCache, "capability");
+        this.loadEntitiesIntoCache(this.personasPath, PersonaSchema, this.personaCache, "persona");
+        this.loadEntitiesIntoCache(this.componentsPath, ComponentSchema, this.componentCache, "component");
+        this.loadEntitiesIntoCache(this.tokensPath, TokensSchema, this.tokensCache, "tokens");
+        this.loadEntitiesIntoCache(this.viewsPath, ViewSchema, this.viewCache, "view");
+        this.loadEntitiesIntoCache(this.interactionsPath, InteractionPatternSchema, this.interactionCache, "interaction");
+        this.loadEntitiesIntoCache(this.testResultsPath, TestResultSchema, this.testResultCache, "test-result");
 
         this.cacheLoaded = true;
     }
@@ -753,11 +827,13 @@ export class DesignDocsStore {
      * @param schema - Zod schema with parse function for validation
      * @param schema.parse - Parse function that validates and returns entity
      * @param cache - Map to store parsed entities
+     * @param entityType - Type of entity for schema version warnings
      */
-    private loadEntitiesIntoCache<T extends { id: string }>(
+    private loadEntitiesIntoCache<T extends { id: string; schema_version?: string }>(
         dirPath: string,
         schema: { parse: (data: unknown) => T },
-        cache: Map<string, T>
+        cache: Map<string, T>,
+        entityType: EntityType
     ): void {
         if (!fs.existsSync(dirPath)) {
             return;
@@ -771,6 +847,12 @@ export class DesignDocsStore {
                 const data = parseYaml(content);
                 const entity = schema.parse(data);
                 cache.set(entity.id, entity);
+
+                // Check schema version and generate warning if needed
+                const warning = createSchemaWarning(entityType, entity.id, entity.schema_version);
+                if (warning) {
+                    this.schemaWarnings.push(warning);
+                }
             } catch {
                 // Skip invalid files
             }
@@ -790,6 +872,12 @@ export class DesignDocsStore {
         if (filters?.category) {
             workflows = workflows.filter(w => w.category === filters.category);
         }
+        if (filters?.status) {
+            workflows = workflows.filter(w => (w.status ?? "draft") === filters.status);
+        }
+        if (filters?.priority) {
+            workflows = workflows.filter(w => w.priority === filters.priority);
+        }
         if (filters?.validated !== undefined) {
             workflows = workflows.filter(w => w.validated === filters.validated);
         }
@@ -804,6 +892,8 @@ export class DesignDocsStore {
             id: w.id,
             name: w.name,
             category: w.category,
+            status: w.status ?? "draft",
+            priority: w.priority,
             validated: w.validated ?? false,
         }));
     }
@@ -824,6 +914,9 @@ export class DesignDocsStore {
         if (filters?.status) {
             capabilities = capabilities.filter(c => c.status === filters.status);
         }
+        if (filters?.priority) {
+            capabilities = capabilities.filter(c => c.priority === filters.priority);
+        }
         if (filters?.workflow) {
             capabilities = capabilities.filter(c => c.used_by_workflows.includes(filters.workflow ?? ""));
         }
@@ -833,6 +926,7 @@ export class DesignDocsStore {
             name: c.name,
             category: c.category,
             status: c.status ?? "planned",
+            priority: c.priority,
         }));
     }
 
@@ -867,6 +961,9 @@ export class DesignDocsStore {
         if (filters?.status) {
             components = components.filter(c => c.status === filters.status);
         }
+        if (filters?.priority) {
+            components = components.filter(c => c.priority === filters.priority);
+        }
         if (filters?.capability) {
             components = components.filter(c => c.implements_capabilities.includes(filters.capability ?? ""));
         }
@@ -876,6 +973,7 @@ export class DesignDocsStore {
             name: c.name,
             category: c.category,
             status: c.status ?? "planned",
+            priority: c.priority,
         }));
     }
 
@@ -892,10 +990,14 @@ export class DesignDocsStore {
         if (filters?.extends) {
             tokens = tokens.filter(t => t.extends === filters.extends);
         }
+        if (filters?.status) {
+            tokens = tokens.filter(t => (t.status ?? "draft") === filters.status);
+        }
 
         return tokens.map(t => ({
             id: t.id,
             name: t.name,
+            status: t.status ?? "draft",
             extends: t.extends,
         }));
     }
@@ -913,6 +1015,12 @@ export class DesignDocsStore {
         if (filters?.layout_type) {
             views = views.filter(v => v.layout.type === filters.layout_type);
         }
+        if (filters?.status) {
+            views = views.filter(v => (v.status ?? "draft") === filters.status);
+        }
+        if (filters?.priority) {
+            views = views.filter(v => v.priority === filters.priority);
+        }
         if (filters?.workflow) {
             views = views.filter(v => v.workflows.includes(filters.workflow ?? ""));
         }
@@ -923,6 +1031,8 @@ export class DesignDocsStore {
         return views.map(v => ({
             id: v.id,
             name: v.name,
+            status: v.status ?? "draft",
+            priority: v.priority,
             layout_type: v.layout.type,
             route_count: v.routes?.length ?? 0,
             state_count: v.states?.length ?? 0,
@@ -942,11 +1052,58 @@ export class DesignDocsStore {
         if (filters?.applies_to) {
             interactions = interactions.filter(i => i.applies_to?.includes(filters.applies_to ?? ""));
         }
+        if (filters?.status) {
+            interactions = interactions.filter(i => (i.status ?? "draft") === filters.status);
+        }
 
         return interactions.map(i => ({
             id: i.id,
             name: i.name,
+            status: i.status ?? "draft",
             applies_to: i.applies_to ?? [],
+        }));
+    }
+
+    /**
+     * List all test results with optional filters.
+     * @param filters - Optional filters for workflow, persona, test type, or status
+     * @returns Array of test result summaries
+     */
+    listTestResults(filters?: TestResultFilters): TestResultSummary[] {
+        this.ensureCacheLoaded();
+
+        let testResults = Array.from(this.testResultCache.values());
+
+        if (filters?.workflow_id) {
+            testResults = testResults.filter(t => t.workflow_id === filters.workflow_id);
+        }
+        if (filters?.persona_id) {
+            testResults = testResults.filter(t => t.persona_id === filters.persona_id);
+        }
+        if (filters?.test_type) {
+            testResults = testResults.filter(t => t.test_type === filters.test_type);
+        }
+        if (filters?.status) {
+            testResults = testResults.filter(t => t.status === filters.status);
+        }
+        if (filters?.confidence) {
+            testResults = testResults.filter(t => (t.confidence ?? "medium") === filters.confidence);
+        }
+        if (filters?.has_issues !== undefined) {
+            testResults = testResults.filter(t =>
+                filters.has_issues ? (t.issues?.length ?? 0) > 0 : (t.issues?.length ?? 0) === 0
+            );
+        }
+
+        return testResults.map(t => ({
+            id: t.id,
+            workflow_id: t.workflow_id,
+            persona_id: t.persona_id,
+            test_type: t.test_type,
+            date: t.date,
+            status: t.status,
+            issue_count: t.issues?.length ?? 0,
+            confidence: t.confidence ?? "medium",
         }));
     }
 
@@ -1177,6 +1334,64 @@ export class DesignDocsStore {
     }
 
     /**
+     * Get a test result by ID with resolved relationships.
+     * @param id - TestResult ID
+     * @returns TestResult with resolved references or null if not found
+     */
+    getTestResult(id: string): TestResultWithResolved | null {
+        this.ensureCacheLoaded();
+
+        const testResult = this.testResultCache.get(id);
+        if (!testResult) {
+            return null;
+        }
+
+        // Resolve workflow reference
+        const workflow = this.workflowCache.get(testResult.workflow_id);
+        const workflowRef = workflow ? { id: workflow.id, name: workflow.name } : null;
+
+        // Resolve persona reference
+        const persona = this.personaCache.get(testResult.persona_id);
+        const personaRef = persona ? { id: persona.id, name: persona.name } : null;
+
+        // Collect all affected components and capabilities from issues
+        const affectedComponentIds = new Set<string>();
+        const affectedCapabilityIds = new Set<string>();
+        for (const issue of testResult.issues ?? []) {
+            for (const compId of issue.affected_components ?? []) {
+                affectedComponentIds.add(compId);
+            }
+            for (const capId of issue.affected_capabilities ?? []) {
+                affectedCapabilityIds.add(capId);
+            }
+        }
+
+        const affectedComponents = Array.from(affectedComponentIds)
+            .map(compId => {
+                const comp = this.componentCache.get(compId);
+                return comp ? { id: comp.id, name: comp.name } : null;
+            })
+            .filter((c): c is NonNullable<typeof c> => c !== null);
+
+        const affectedCapabilities = Array.from(affectedCapabilityIds)
+            .map(capId => {
+                const cap = this.capabilityCache.get(capId);
+                return cap ? { id: cap.id, name: cap.name } : null;
+            })
+            .filter((c): c is NonNullable<typeof c> => c !== null);
+
+        return {
+            ...testResult,
+            _resolved: {
+                workflow: workflowRef,
+                persona: personaRef,
+                affected_components: affectedComponents,
+                affected_capabilities: affectedCapabilities,
+            },
+        };
+    }
+
+    /**
      * Check if a workflow exists.
      * @param id - Workflow ID to check
      * @returns True if workflow exists
@@ -1244,6 +1459,16 @@ export class DesignDocsStore {
     interactionExists(id: string): boolean {
         this.ensureCacheLoaded();
         return this.interactionCache.has(id);
+    }
+
+    /**
+     * Check if a test result exists.
+     * @param id - TestResult ID to check
+     * @returns True if test result exists
+     */
+    testResultExists(id: string): boolean {
+        this.ensureCacheLoaded();
+        return this.testResultCache.has(id);
     }
 
     /**
@@ -1384,6 +1609,7 @@ export class DesignDocsStore {
         this.tokensCache.clear();
         this.viewCache.clear();
         this.interactionCache.clear();
+        this.testResultCache.clear();
         this.cacheLoaded = false;
         this.ensureCacheLoaded();
     }
@@ -1641,6 +1867,79 @@ export class DesignDocsStore {
         } catch (err) {
             return { success: false, error: this.formatZodError(err as ZodError) };
         }
+    }
+
+    /**
+     * Create a new test result.
+     * @param data - TestResult data to create
+     * @returns Result with success status and optional error message
+     */
+    createTestResult(data: CreateTestResultInput): CreateResult {
+        this.ensureCacheLoaded();
+
+        // Check for duplicate ID
+        if (this.testResultCache.has(data.id)) {
+            return { success: false, error: `Test result '${data.id}' already exists` };
+        }
+
+        // Validate references
+        const refErrors = this.validateTestResultReferences(data);
+        if (refErrors.length > 0) {
+            return { success: false, error: refErrors.join("; ") };
+        }
+
+        // Validate against schema (add version metadata)
+        try {
+            const testResult = TestResultSchema.parse({
+                ...data,
+                ...createVersionMetadata(),
+            });
+
+            // Write to file
+            writeYamlFile(this.testResultsPath, testResult.id, testResult);
+
+            // Update cache
+            this.testResultCache.set(testResult.id, testResult);
+
+            return { success: true };
+        } catch (err) {
+            return { success: false, error: this.formatZodError(err as ZodError) };
+        }
+    }
+
+    /**
+     * Validate test result references (workflow, persona, components, capabilities).
+     * @param data - TestResult data to validate
+     * @returns Array of error messages (empty if all valid)
+     */
+    private validateTestResultReferences(data: CreateTestResultInput): string[] {
+        const errors: string[] = [];
+
+        // Check workflow
+        if (!this.workflowCache.has(data.workflow_id)) {
+            errors.push(`Workflow '${data.workflow_id}' does not exist`);
+        }
+
+        // Check persona
+        if (!this.personaCache.has(data.persona_id)) {
+            errors.push(`Persona '${data.persona_id}' does not exist`);
+        }
+
+        // Check affected components in issues
+        for (const issue of data.issues ?? []) {
+            for (const compId of issue.affected_components ?? []) {
+                if (!this.componentCache.has(compId)) {
+                    errors.push(`Component '${compId}' does not exist`);
+                }
+            }
+            for (const capId of issue.affected_capabilities ?? []) {
+                if (!this.capabilityCache.has(capId)) {
+                    errors.push(`Capability '${capId}' does not exist`);
+                }
+            }
+        }
+
+        return errors;
     }
 
     // ============= VALIDATION HELPERS =============
@@ -2172,6 +2471,64 @@ export class DesignDocsStore {
         }
     }
 
+    /**
+     * Update an existing test result.
+     * @param id - TestResult ID to update
+     * @param updates - Partial update data
+     * @returns Result with success status and optional error message
+     */
+    updateTestResult(id: string, updates: UpdateTestResultInput): UpdateResult {
+        this.ensureCacheLoaded();
+
+        const existing = this.testResultCache.get(id);
+        if (!existing) {
+            return { success: false, error: `Test result '${id}' not found` };
+        }
+
+        // Validate component/capability references in issues if provided
+        if (updates.issues) {
+            const errors: string[] = [];
+            for (const issue of updates.issues) {
+                for (const compId of issue.affected_components ?? []) {
+                    if (!this.componentCache.has(compId)) {
+                        errors.push(`Component '${compId}' does not exist`);
+                    }
+                }
+                for (const capId of issue.affected_capabilities ?? []) {
+                    if (!this.capabilityCache.has(capId)) {
+                        errors.push(`Capability '${capId}' does not exist`);
+                    }
+                }
+            }
+            if (errors.length > 0) {
+                return { success: false, error: errors.join("; ") };
+            }
+        }
+
+        // Merge updates with existing data (update version metadata)
+        const merged = {
+            ...existing,
+            ...updates,
+            ...updateVersionMetadata(existing),
+        };
+
+        // Validate merged data against schema
+        try {
+            const updated = TestResultSchema.parse(merged);
+
+            // Update cache
+            this.testResultCache.set(id, updated);
+
+            // Write to file
+            const filePath = path.join(this.testResultsPath, `${id}.yaml`);
+            updateYamlFile(filePath, updated);
+
+            return { success: true };
+        } catch (err) {
+            return { success: false, error: this.formatZodError(err as ZodError) };
+        }
+    }
+
     // ============= DELETE OPERATIONS =============
 
     /**
@@ -2489,6 +2846,34 @@ export class DesignDocsStore {
 
         // Delete file
         const filePath = path.join(this.interactionsPath, `${id}.yaml`);
+        if (fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
+        }
+
+        return { success: true };
+    }
+
+    /**
+     * Delete a test result.
+     * @param id - TestResult ID to delete
+     * @param _options - Delete options (unused for test results, included for consistency)
+     * @returns Result with success status and optional error message
+     */
+    deleteTestResult(id: string, _options?: DeleteOptions): DeleteResult {
+        this.ensureCacheLoaded();
+
+        const existing = this.testResultCache.get(id);
+        if (!existing) {
+            return { success: false, error: `Test result '${id}' not found` };
+        }
+
+        // Test results have no dependents, so we can delete directly
+
+        // Remove from cache
+        this.testResultCache.delete(id);
+
+        // Delete file
+        const filePath = path.join(this.testResultsPath, `${id}.yaml`);
         if (fs.existsSync(filePath)) {
             fs.unlinkSync(filePath);
         }
@@ -2997,6 +3382,15 @@ export class DesignDocsStore {
 
         const errors: string[] = [];
         const warnings: string[] = [];
+
+        // Add schema version warnings
+        for (const warning of this.schemaWarnings) {
+            if (warning.severity === "error") {
+                errors.push(`[Schema] ${warning.entityType} '${warning.entityId}': ${warning.message}`);
+            } else if (warning.severity === "warning") {
+                warnings.push(`[Schema] ${warning.entityType} '${warning.entityId}': ${warning.message}`);
+            }
+        }
 
         // Validate workflow references
         for (const workflow of this.workflowCache.values()) {
@@ -3807,5 +4201,104 @@ export class DesignDocsStore {
         lines.push(...edges);
 
         return lines.join("\n");
+    }
+
+    /**
+     * Get test coverage report showing which workflow-persona combinations have been tested.
+     * @returns Test coverage report with entries for each combination and overall statistics
+     */
+    getTestCoverage(): TestCoverageReport {
+        this.ensureCacheLoaded();
+
+        const workflows = Array.from(this.workflowCache.values());
+        const personas = Array.from(this.personaCache.values());
+        const testResults = Array.from(this.testResultCache.values());
+
+        // Build a map of workflow-persona combinations to their test results
+        const testMap = new Map<string, TestResult[]>();
+        for (const result of testResults) {
+            const key = `${result.workflow_id}::${result.persona_id}`;
+            const existing = testMap.get(key) ?? [];
+            existing.push(result);
+            testMap.set(key, existing);
+        }
+
+        const entries: TestCoverageEntry[] = [];
+        const untested: Array<{ workflow_id: string; workflow_name: string; persona_id: string; persona_name: string }> = [];
+
+        // For each workflow, check coverage against its personas
+        for (const workflow of workflows) {
+            const workflowPersonas = workflow.personas.length > 0
+                ? workflow.personas.map(pid => personas.find(p => p.id === pid)).filter((p): p is typeof personas[0] => p !== undefined)
+                : personas; // If no personas specified, test against all
+
+            for (const persona of workflowPersonas) {
+                const key = `${workflow.id}::${persona.id}`;
+                const tests = testMap.get(key) ?? [];
+
+                if (tests.length === 0) {
+                    untested.push({
+                        workflow_id: workflow.id,
+                        workflow_name: workflow.name,
+                        persona_id: persona.id,
+                        persona_name: persona.name,
+                    });
+                    entries.push({
+                        workflow_id: workflow.id,
+                        workflow_name: workflow.name,
+                        persona_id: persona.id,
+                        persona_name: persona.name,
+                        test_count: 0,
+                        latest_test: null,
+                        has_real_test: false,
+                        has_simulated_test: false,
+                    });
+                } else {
+                    // Sort tests by date descending
+                    const sortedTests = tests.sort((a, b) => b.date.localeCompare(a.date));
+                    const latest = sortedTests[0];
+
+                    entries.push({
+                        workflow_id: workflow.id,
+                        workflow_name: workflow.name,
+                        persona_id: persona.id,
+                        persona_name: persona.name,
+                        test_count: tests.length,
+                        latest_test: {
+                            id: latest.id,
+                            date: latest.date,
+                            status: latest.status,
+                            test_type: latest.test_type,
+                        },
+                        has_real_test: tests.some(t => t.test_type === "real"),
+                        has_simulated_test: tests.some(t => t.test_type === "simulated"),
+                    });
+                }
+            }
+        }
+
+        const testedCount = entries.filter(e => e.test_count > 0).length;
+        const possibleCombinations = entries.length;
+
+        return {
+            total_workflows: workflows.length,
+            total_personas: personas.length,
+            possible_combinations: possibleCombinations,
+            tested_combinations: testedCount,
+            coverage_percentage: possibleCombinations > 0 ? Math.round((testedCount / possibleCombinations) * 100) : 0,
+            real_test_count: testResults.filter(t => t.test_type === "real").length,
+            simulated_test_count: testResults.filter(t => t.test_type === "simulated").length,
+            entries,
+            untested,
+        };
+    }
+
+    /**
+     * Get schema version warnings for loaded entities.
+     * @returns Array of warnings for entities with outdated or missing schema versions
+     */
+    getSchemaWarnings(): SchemaVersionWarning[] {
+        this.ensureCacheLoaded();
+        return [...this.schemaWarnings];
     }
 }

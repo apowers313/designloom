@@ -1,7 +1,13 @@
 /* eslint-disable camelcase -- snake_case matches YAML field names for serialization */
 import { z } from "zod";
 
-import { SourceSchema, VersionMetadataSchema } from "./source.js";
+import {
+    DeprecationSchema,
+    ImplementationTrackingSchema,
+    PrioritySchema,
+    SourceSchema,
+    VersionMetadataSchema,
+} from "./source.js";
 import { BreakpointKeySchema,ResponsiveValueSchema } from "./tokens.js";
 
 /**
@@ -10,6 +16,17 @@ import { BreakpointKeySchema,ResponsiveValueSchema } from "./tokens.js";
 const ViewIdSchema = z
     .string()
     .regex(/^V\d{2,3}$/, "ID must match pattern V01, V99, etc.");
+
+/**
+ * View status - tracks the lifecycle from design to implementation
+ */
+const ViewStatusSchema = z.enum([
+    "draft",        // Still designing layout
+    "designed",     // Layout finalized
+    "implementing", // Currently being implemented
+    "implemented",  // Code complete
+    "deprecated",   // No longer used
+]);
 
 /**
  * =============================================================================
@@ -350,6 +367,8 @@ export const ViewSchema = z.object({
     id: ViewIdSchema,
     name: z.string().min(1).describe("Human-readable view name"),
     description: z.string().optional(),
+    status: ViewStatusSchema.optional().default("draft"),
+    priority: PrioritySchema.optional(),
 
     // Which workflows use this view
     workflows: z.array(z.string()).optional().default([]).describe(
@@ -385,7 +404,8 @@ export const ViewSchema = z.object({
 
     // Metadata
     sources: z.array(SourceSchema).optional().default([]),
-}).merge(VersionMetadataSchema);
+    deprecation: DeprecationSchema.optional(),
+}).merge(ImplementationTrackingSchema).merge(VersionMetadataSchema);
 
 /**
  * View type derived from schema
@@ -398,6 +418,8 @@ export type View = z.infer<typeof ViewSchema>;
 export interface ViewSummary {
     id: string;
     name: string;
+    status: string;
+    priority?: string;
     layout_type: string;
     route_count: number;
     state_count: number;
@@ -421,6 +443,8 @@ export type ViewWithResolved = View & { _resolved: ViewResolved };
  */
 export interface ViewFilters {
     layout_type?: string;
+    status?: string;
+    priority?: string;
     workflow?: string;
     has_route?: boolean;
 }

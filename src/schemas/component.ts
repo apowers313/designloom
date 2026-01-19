@@ -2,7 +2,13 @@
 import { z } from "zod";
 
 import { InteractionSchema } from "./interaction.js";
-import { SourceSchema, VersionMetadataSchema } from "./source.js";
+import {
+    DeprecationSchema,
+    ImplementationTrackingSchema,
+    PrioritySchema,
+    SourceSchema,
+    VersionMetadataSchema,
+} from "./source.js";
 
 /**
  * Component ID pattern: kebab-case (e.g., data-import-dialog, progress-bar)
@@ -193,6 +199,7 @@ export const ComponentSchema = z.object({
     category: ComponentCategorySchema,
     description: z.string().min(1),
     status: ComponentStatusSchema.optional().default("planned"),
+    priority: PrioritySchema.optional(),
 
     // Relationships (existing)
     implements_capabilities: z.array(z.string()).optional().default([]),
@@ -258,7 +265,8 @@ export const ComponentSchema = z.object({
 
     // Metadata
     sources: z.array(SourceSchema).optional().default([]),
-}).merge(VersionMetadataSchema);
+    deprecation: DeprecationSchema.optional(),
+}).merge(ImplementationTrackingSchema).merge(VersionMetadataSchema);
 
 /**
  * Component type derived from schema
@@ -273,6 +281,7 @@ export interface ComponentSummary {
     name: string;
     category: string;
     status: string;
+    priority?: string;
 }
 
 /**
@@ -295,5 +304,6 @@ export type ComponentWithResolved = Component & { _resolved: ComponentResolved }
 export interface ComponentFilters {
     category?: string;
     status?: string;
+    priority?: string;
     capability?: string;
 }

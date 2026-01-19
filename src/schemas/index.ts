@@ -47,6 +47,16 @@ export {
     VersionMetadataSchema,
 } from "./source.js";
 export {
+    type TestCoverageEntry,
+    type TestCoverageReport,
+    type TestResult,
+    type TestResultFilters,
+    type TestResultResolved,
+    TestResultSchema,
+    type TestResultSummary,
+    type TestResultWithResolved,
+} from "./test-result.js";
+export {
     // Sub-schemas for direct use
     BreakpointKeySchema,
     ColorValueSchema,
@@ -59,6 +69,16 @@ export {
     type TokensSummary,
     type TokensWithResolved,
 } from "./tokens.js";
+export {
+    checkSchemaVersion,
+    compareVersions,
+    createSchemaWarning,
+    CURRENT_SCHEMA_VERSION,
+    MINIMUM_COMPATIBLE_VERSION,
+    type SchemaVersionWarning,
+    type VersionCompareResult,
+    type VersionWarningSeverity,
+} from "./version.js";
 export {
     // Sub-schemas for direct use
     LayoutTypeSchema,

@@ -4,6 +4,7 @@ import type {
     CreateComponentInput,
     CreateInteractionInput,
     CreatePersonaInput,
+    CreateTestResultInput,
     CreateTokensInput,
     CreateViewInput,
     CreateWorkflowInput,
@@ -14,6 +15,7 @@ import type {
     UpdateComponentInput,
     UpdateInteractionInput,
     UpdatePersonaInput,
+    UpdateTestResultInput,
     UpdateTokensInput,
     UpdateViewInput,
     UpdateWorkflowInput,
@@ -1030,6 +1032,149 @@ export function getMutationTools(): ToolDefinition[] {
                 required: ["id"],
             },
         },
+        // ============= TEST RESULT TOOLS =============
+        {
+            name: "design_create_test_result",
+            description: "Create a new test result for a workflow-persona combination. Use for simulated (AI-driven) or real user testing.",
+            inputSchema: {
+                type: "object",
+                properties: {
+                    id: {
+                        type: "string",
+                        description: "Test result ID (format: TR-{WorkflowID}-{PersonaID}-{sequence}, e.g., TR-W01-analyst-alex-001)",
+                    },
+                    workflow_id: {
+                        type: "string",
+                        description: "Workflow ID being tested (e.g., W01)",
+                    },
+                    persona_id: {
+                        type: "string",
+                        description: "Persona ID used for testing (e.g., analyst-alex)",
+                    },
+                    test_type: {
+                        type: "string",
+                        enum: ["simulated", "real"],
+                        description: "Type of test: simulated (AI-driven cognitive walkthrough) or real (actual user testing)",
+                    },
+                    date: {
+                        type: "string",
+                        description: "Test date in ISO 8601 format (e.g., 2024-01-15)",
+                    },
+                    status: {
+                        type: "string",
+                        enum: ["passed", "failed", "partial"],
+                        description: "Overall test result status",
+                    },
+                    confidence: {
+                        type: "string",
+                        enum: ["high", "medium", "low"],
+                        description: "Confidence level in findings (default: medium)",
+                    },
+                    success_criteria_results: {
+                        type: "array",
+                        items: {
+                            type: "object",
+                            properties: {
+                                criterion: { type: "string" },
+                                target: { type: "string" },
+                                actual: { type: "string" },
+                                passed: { type: "boolean" },
+                                notes: { type: "string" },
+                            },
+                            required: ["criterion", "target", "passed"],
+                        },
+                        description: "Results for each success criterion",
+                    },
+                    issues: {
+                        type: "array",
+                        items: {
+                            type: "object",
+                            properties: {
+                                severity: { type: "string", enum: ["critical", "major", "minor"] },
+                                description: { type: "string" },
+                                workflow_step: { type: "string" },
+                                persona_factor: { type: "string" },
+                                affected_components: { type: "array", items: { type: "string" } },
+                                affected_capabilities: { type: "array", items: { type: "string" } },
+                                recommendation: { type: "string" },
+                                evidence: { type: "string" },
+                            },
+                            required: ["severity", "description"],
+                        },
+                        description: "Issues found during testing",
+                    },
+                    summary: {
+                        type: "string",
+                        description: "Brief narrative summary of the test",
+                    },
+                    participants: {
+                        type: "number",
+                        description: "Number of participants (for real tests)",
+                    },
+                    quotes: {
+                        type: "array",
+                        items: { type: "string" },
+                        description: "User quotes (for real tests)",
+                    },
+                    recommendations: {
+                        type: "array",
+                        items: { type: "string" },
+                        description: "Recommendations based on findings",
+                    },
+                    sources: {
+                        type: "array",
+                        items: {
+                            type: "object",
+                            properties: {
+                                title: { type: "string" },
+                                url: { type: "string" },
+                                summary: { type: "string" },
+                            },
+                            required: ["title", "url"],
+                        },
+                        description: "Sources for test documentation",
+                    },
+                },
+                required: ["id", "workflow_id", "persona_id", "test_type", "date", "status"],
+            },
+        },
+        {
+            name: "design_update_test_result",
+            description: "Update an existing test result",
+            inputSchema: {
+                type: "object",
+                properties: {
+                    id: {
+                        type: "string",
+                        description: "Test result ID to update",
+                    },
+                    status: { type: "string", enum: ["passed", "failed", "partial"] },
+                    confidence: { type: "string", enum: ["high", "medium", "low"] },
+                    success_criteria_results: { type: "array" },
+                    issues: { type: "array" },
+                    summary: { type: "string" },
+                    participants: { type: "number" },
+                    quotes: { type: "array", items: { type: "string" } },
+                    recommendations: { type: "array", items: { type: "string" } },
+                    sources: { type: "array" },
+                },
+                required: ["id"],
+            },
+        },
+        {
+            name: "design_delete_test_result",
+            description: "Delete a test result",
+            inputSchema: {
+                type: "object",
+                properties: {
+                    id: {
+                        type: "string",
+                        description: "Test result ID to delete",
+                    },
+                },
+                required: ["id"],
+            },
+        },
         // ============= LINK TOOLS =============
         {
             name: "design_link",
@@ -1613,6 +1758,70 @@ export function handleMutationTool(
             }
             return {
                 content: [{ type: "text", text: result.error ?? "Failed to delete interaction pattern" }],
+                isError: true,
+            };
+        }
+
+        // ============= TEST RESULT HANDLERS =============
+
+        case "design_create_test_result": {
+            const data = {
+                id: toStringOrDefault(args.id),
+                workflow_id: toStringOrDefault(args.workflow_id),
+                persona_id: toStringOrDefault(args.persona_id),
+                test_type: args.test_type as "simulated" | "real",
+                date: toStringOrDefault(args.date),
+                status: args.status as "passed" | "failed" | "partial",
+                confidence: args.confidence as "high" | "medium" | "low" | undefined,
+                success_criteria_results: args.success_criteria_results as CreateTestResultInput["success_criteria_results"],
+                issues: args.issues as CreateTestResultInput["issues"],
+                summary: args.summary as string | undefined,
+                participants: args.participants as number | undefined,
+                quotes: args.quotes as string[] | undefined,
+                recommendations: args.recommendations as string[] | undefined,
+                sources: args.sources as CreateTestResultInput["sources"],
+            };
+            const result = store.createTestResult(data);
+            if (result.success) {
+                return { content: [{ type: "text", text: JSON.stringify({ success: true, id: data.id, created: true }, null, 2) }] };
+            }
+            return {
+                content: [{ type: "text", text: result.error ?? "Failed to create test result" }],
+                isError: true,
+            };
+        }
+
+        case "design_update_test_result": {
+            const id = toStringOrDefault(args.id);
+            const updates: UpdateTestResultInput = {};
+            if (args.status !== undefined) {updates.status = args.status as "passed" | "failed" | "partial";}
+            if (args.confidence !== undefined) {updates.confidence = args.confidence as "high" | "medium" | "low";}
+            if (args.success_criteria_results !== undefined) {updates.success_criteria_results = args.success_criteria_results as UpdateTestResultInput["success_criteria_results"];}
+            if (args.issues !== undefined) {updates.issues = args.issues as UpdateTestResultInput["issues"];}
+            if (args.summary !== undefined) {updates.summary = args.summary as string;}
+            if (args.participants !== undefined) {updates.participants = args.participants as number;}
+            if (args.quotes !== undefined) {updates.quotes = args.quotes as string[];}
+            if (args.recommendations !== undefined) {updates.recommendations = args.recommendations as string[];}
+            if (args.sources !== undefined) {updates.sources = args.sources as UpdateTestResultInput["sources"];}
+
+            const result = store.updateTestResult(id, updates);
+            if (result.success) {
+                return { content: [{ type: "text", text: JSON.stringify({ success: true, id, updated: true }, null, 2) }] };
+            }
+            return {
+                content: [{ type: "text", text: result.error ?? "Failed to update test result" }],
+                isError: true,
+            };
+        }
+
+        case "design_delete_test_result": {
+            const id = toStringOrDefault(args.id);
+            const result = store.deleteTestResult(id);
+            if (result.success) {
+                return { content: [{ type: "text", text: JSON.stringify({ success: true, id, deleted: true }, null, 2) }] };
+            }
+            return {
+                content: [{ type: "text", text: result.error ?? "Failed to delete test result" }],
                 isError: true,
             };
         }

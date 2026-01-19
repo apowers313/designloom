@@ -1,7 +1,11 @@
 /* eslint-disable camelcase -- snake_case matches YAML field names for serialization */
 import { z } from "zod";
 
-import { VersionMetadataSchema } from "./source.js";
+import {
+    DeprecationSchema,
+    ImplementationTrackingSchema,
+    VersionMetadataSchema,
+} from "./source.js";
 
 /**
  * =============================================================================
@@ -503,10 +507,21 @@ const InteractionPatternIdSchema = z
     .string()
     .regex(/^[a-z][a-z0-9]*(-[a-z0-9]+)*$/, "ID must match pattern kebab-case");
 
+/**
+ * Interaction pattern status - tracks documentation and implementation
+ */
+const InteractionPatternStatusSchema = z.enum([
+    "draft",        // Still defining the pattern
+    "documented",   // Pattern documented, ready to use
+    "implemented",  // Code exists for this pattern
+    "deprecated",   // No longer recommended
+]);
+
 export const InteractionPatternSchema = z.object({
     id: InteractionPatternIdSchema,
     name: z.string().min(1),
     description: z.string().optional(),
+    status: InteractionPatternStatusSchema.optional().default("draft"),
 
     // The interaction definition
     interaction: InteractionSchema,
@@ -522,7 +537,8 @@ export const InteractionPatternSchema = z.object({
         url: z.string().url().optional(),
         summary: z.string().optional(),
     })).optional().default([]),
-}).merge(VersionMetadataSchema);
+    deprecation: DeprecationSchema.optional(),
+}).merge(ImplementationTrackingSchema).merge(VersionMetadataSchema);
 
 /**
  * Interaction pattern type derived from schema
@@ -535,6 +551,7 @@ export type InteractionPattern = z.infer<typeof InteractionPatternSchema>;
 export interface InteractionPatternSummary {
     id: string;
     name: string;
+    status: string;
     applies_to: string[];
 }
 
@@ -543,6 +560,7 @@ export interface InteractionPatternSummary {
  */
 export interface InteractionPatternFilters {
     applies_to?: string;
+    status?: string;
 }
 
 /**

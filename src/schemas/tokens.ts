@@ -1,7 +1,12 @@
 /* eslint-disable camelcase -- snake_case matches YAML field names for serialization */
 import { z } from "zod";
 
-import { SourceSchema, VersionMetadataSchema } from "./source.js";
+import {
+    DeprecationSchema,
+    ImplementationTrackingSchema,
+    SourceSchema,
+    VersionMetadataSchema,
+} from "./source.js";
 
 /**
  * Tokens ID pattern: kebab-case (e.g., default-theme, dark-mode)
@@ -9,6 +14,15 @@ import { SourceSchema, VersionMetadataSchema } from "./source.js";
 const TokensIdSchema = z
     .string()
     .regex(/^[a-z][a-z0-9]*(-[a-z0-9]+)*$/, "ID must match pattern kebab-case (e.g., default-theme)");
+
+/**
+ * Tokens status - tracks the lifecycle of token definitions
+ */
+const TokensStatusSchema = z.enum([
+    "draft",      // Still defining tokens
+    "finalized",  // Token values are finalized
+    "deprecated", // No longer used, replaced by another token set
+]);
 
 /**
  * =============================================================================
@@ -495,6 +509,7 @@ export const TokensSchema = z.object({
     id: TokensIdSchema,
     name: z.string().min(1).describe("Human-readable theme name"),
     description: z.string().optional(),
+    status: TokensStatusSchema.optional().default("draft"),
 
     // Inheritance - extend another token set (e.g., dark mode extends default)
     extends: TokensIdSchema.optional().describe("ID of parent token set to extend"),
@@ -518,7 +533,8 @@ export const TokensSchema = z.object({
 
     // Metadata
     sources: z.array(SourceSchema).optional().default([]),
-}).merge(VersionMetadataSchema);
+    deprecation: DeprecationSchema.optional(),
+}).merge(ImplementationTrackingSchema).merge(VersionMetadataSchema);
 
 /**
  * Tokens type derived from schema
@@ -531,6 +547,7 @@ export type Tokens = z.infer<typeof TokensSchema>;
 export interface TokensSummary {
     id: string;
     name: string;
+    status: string;
     extends?: string;
 }
 
@@ -539,6 +556,7 @@ export interface TokensSummary {
  */
 export interface TokensFilters {
     extends?: string;
+    status?: string;
 }
 
 /**

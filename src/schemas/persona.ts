@@ -1,7 +1,11 @@
 /* eslint-disable camelcase -- snake_case matches YAML field names for serialization */
 import { z } from "zod";
 
-import { SourceSchema, VersionMetadataSchema } from "./source.js";
+import {
+    DeprecationSchema,
+    SourceSchema,
+    VersionMetadataSchema,
+} from "./source.js";
 
 /**
  * Persona ID pattern: kebab-case (e.g., analyst-alex, developer-dave)
@@ -61,6 +65,10 @@ export const PersonaSchema = z.object({
     context: ContextSchema.optional(),
     workflows: z.array(z.string()).optional().default([]),
     sources: z.array(SourceSchema).optional().default([]),
+    notes: z.string().optional().describe(
+        "Research notes, decisions about this persona, or other context"
+    ),
+    deprecation: DeprecationSchema.optional(),
 }).merge(VersionMetadataSchema);
 
 /**

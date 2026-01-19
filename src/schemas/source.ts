@@ -39,6 +39,9 @@ export const VersionMetadataSchema = z.object({
     version: SemanticVersionSchema.describe(
         "Semantic version (major.minor.patch). Auto-managed by store."
     ).optional(),
+    schema_version: SemanticVersionSchema.describe(
+        "Schema definition version used when creating/updating this entity. Auto-managed by store."
+    ).optional(),
     created_at: IsoDateSchema.describe(
         "ISO 8601 timestamp when entity was created. Auto-managed by store."
     ).optional(),
@@ -46,6 +49,71 @@ export const VersionMetadataSchema = z.object({
         "ISO 8601 timestamp when entity was last updated. Auto-managed by store."
     ).optional(),
 });
+
+/**
+ * =============================================================================
+ * PRIORITY SCHEMA
+ * =============================================================================
+ * Priority levels for implementation ordering.
+ * - P0: Critical / Golden Path - must-have for MVP
+ * - P1: Important - should-have, implement after P0
+ * - P2: Nice-to-have - could defer if needed
+ */
+export const PrioritySchema = z.enum(["P0", "P1", "P2"]).describe(
+    "Implementation priority: P0 (critical), P1 (important), P2 (nice-to-have)"
+);
+
+/**
+ * Priority type
+ */
+export type Priority = z.infer<typeof PrioritySchema>;
+
+/**
+ * =============================================================================
+ * IMPLEMENTATION TRACKING SCHEMA
+ * =============================================================================
+ * Fields for tracking when design artifacts are implemented in code.
+ * Separate from updated_at (which tracks design doc changes).
+ */
+export const ImplementationTrackingSchema = z.object({
+    implemented_at: IsoDateSchema.describe(
+        "ISO 8601 timestamp when this was implemented in code (set manually)"
+    ).optional(),
+    notes: z.string().describe(
+        "Implementation notes, design rationale, or other context"
+    ).optional(),
+});
+
+/**
+ * Implementation tracking type
+ */
+export type ImplementationTracking = z.infer<typeof ImplementationTrackingSchema>;
+
+/**
+ * =============================================================================
+ * DEPRECATION SCHEMA
+ * =============================================================================
+ * Detailed deprecation information for change management.
+ */
+export const DeprecationSchema = z.object({
+    deprecated_at: IsoDateSchema.describe(
+        "ISO 8601 timestamp when this was deprecated"
+    ),
+    replaced_by: z.string().optional().describe(
+        "ID of the entity that replaces this one"
+    ),
+    reason: z.string().optional().describe(
+        "Why this was deprecated"
+    ),
+    migration_guide: z.string().optional().describe(
+        "Instructions for migrating to the replacement"
+    ),
+});
+
+/**
+ * Deprecation type
+ */
+export type Deprecation = z.infer<typeof DeprecationSchema>;
 
 /**
  * Version metadata type

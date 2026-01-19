@@ -1,7 +1,13 @@
 /* eslint-disable camelcase -- snake_case matches YAML field names for serialization */
 import { z } from "zod";
 
-import { SourceSchema, VersionMetadataSchema } from "./source.js";
+import {
+    DeprecationSchema,
+    ImplementationTrackingSchema,
+    PrioritySchema,
+    SourceSchema,
+    VersionMetadataSchema,
+} from "./source.js";
 
 /**
  * Workflow ID pattern: W followed by 1-3 digits (e.g., W01, W99, W123)
@@ -20,6 +26,18 @@ const WorkflowCategorySchema = z.enum([
     "reporting",
     "collaboration",
     "administration",
+]);
+
+/**
+ * Workflow status - tracks the lifecycle from design to implementation
+ */
+const WorkflowStatusSchema = z.enum([
+    "draft",        // Still defining the workflow
+    "designed",     // Design complete, ready for validation
+    "validated",    // Tested with users, design approved
+    "implementing", // Currently being implemented
+    "implemented",  // Code complete
+    "deprecated",   // No longer used
 ]);
 
 /**
@@ -47,7 +65,9 @@ export const WorkflowSchema = z.object({
     id: WorkflowIdSchema,
     name: z.string().min(1),
     category: WorkflowCategorySchema,
-    validated: z.boolean().optional().default(false),
+    status: WorkflowStatusSchema.optional().default("draft"),
+    priority: PrioritySchema.optional(),
+    validated: z.boolean().optional().default(false), // Kept for backward compatibility
     personas: z.array(z.string()).optional().default([]),
     requires_capabilities: z.array(z.string()).optional().default([]),
     suggested_components: z.array(z.string()).optional().default([]),
@@ -55,7 +75,8 @@ export const WorkflowSchema = z.object({
     goal: z.string().min(1),
     success_criteria: z.array(SuccessCriterionSchema).optional().default([]),
     sources: z.array(SourceSchema).optional().default([]),
-}).merge(VersionMetadataSchema);
+    deprecation: DeprecationSchema.optional(),
+}).merge(ImplementationTrackingSchema).merge(VersionMetadataSchema);
 
 /**
  * Workflow type derived from schema
@@ -69,6 +90,8 @@ export interface WorkflowSummary {
     id: string;
     name: string;
     category: string;
+    status: string;
+    priority?: string;
     validated: boolean;
 }
 
@@ -91,6 +114,8 @@ export type WorkflowWithResolved = Workflow & { _resolved: WorkflowResolved };
  */
 export interface WorkflowFilters {
     category?: string;
+    status?: string;
+    priority?: string;
     validated?: boolean;
     persona?: string;
     capability?: string;
