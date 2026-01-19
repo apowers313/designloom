@@ -22,7 +22,7 @@ Use this to inform capability generation:
 **Specific Requirements**:
 
 1. **Retrieve and analyze existing workflows**:
-   - Use `design_list_workflows` to retrieve all workflows
+   - Use `design_list --entity_type workflow` to retrieve all workflows
    - For each workflow, think step-by-step:
      - What steps must the user take to complete this workflow?
      - What must the system be able to DO for each step?
@@ -42,7 +42,7 @@ Use this to inform capability generation:
    - **Small**: Not epic-sized (weeks of work)
    - **Testable**: Clear criteria for "done"
 
-4. **Create capability entities** using `design_create_capability` with:
+4. **Create capability entities** using `design_create --entity_type capability` with:
    - `id`: kebab-case (e.g., "data-import", "search-filter")
    - `name`: Clear, concise name
    - `category`: data/visualization/analysis/interaction/export/collaboration/performance
@@ -58,13 +58,13 @@ Use this to inform capability generation:
    - Ensure each capability has distinct value
 
 6. **Validate the work**:
-   - Run `design_validate` to confirm no errors
-   - Run `design_find_orphans` to verify no orphan capabilities
-   - Run `design_find_gaps` to identify and document any acceptable gaps
+   - Run `design_validate --check all` to confirm no errors
+   - Run `design_validate --check orphans` to verify no orphan capabilities
+   - Run `design_validate --check gaps` to identify and document any acceptable gaps
 
 **Format & Structure**:
 ```yaml
-design_create_capability --data '{
+design_create --entity_type capability --data '{
   "id": "data-import",
   "name": "Data Import",
   "category": "data",
@@ -86,8 +86,8 @@ design_create_capability --data '{
 - Every workflow has at least 1 required capability
 - Each capability has at least 3 testable requirements
 - Each capability linked to at least 1 workflow
-- `design_find_orphans` returns no orphan capabilities
-- `design_validate` returns no errors
+- `design_validate --check orphans` returns no orphan capabilities
+- `design_validate --check all` returns no errors
 - Capabilities address key pain points from research
 - Competitive gaps identified in research are considered
 
@@ -99,7 +99,7 @@ After completing this prompt, evaluate the quality of capability requirements to
 
 **Review the capabilities you created:**
 ```
-design_list_capabilities
+design_list --entity_type capability
 ```
 
 For each capability, check:

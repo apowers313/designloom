@@ -19,10 +19,10 @@ variables:
 1. **Assess Project Context**:
    Retrieve current state:
    ```
-   design_list_personas
-   design_list_workflows
-   design_list_capabilities
-   design_list_components
+   design_list --entity_type persona
+   design_list --entity_type workflow
+   design_list --entity_type capability
+   design_list --entity_type component
    ```
    Summarize what exists and what's missing.
 
@@ -104,11 +104,11 @@ The custom prompt has been generated. To use it:
 1. **Run the generated prompt** to accomplish the specific task
 2. **Evaluate the output** against the success criteria included in the prompt
 3. **If the prompt will be reused**, consider:
-   - Saving it to `./prompts/` with an appropriate number (e.g., `33-custom-task.md`)
+   - Saving it to `./prompts/` with an appropriate number (e.g., `32-custom-task.md`)
    - Adding it to the workflow documentation
 
 **After the generated prompt completes**, return to the main Designloom workflow at the appropriate phase based on what was accomplished.
 
 **Related utility prompts:**
-- **30 - Prompt Improvement**: If the generated prompt produces suboptimal results
-- **32 - Multi-Agent Verification**: To verify the output quality of the generated prompt
+- **29 - Prompt Improvement**: If the generated prompt produces suboptimal results
+- **31 - Multi-Agent Verification**: To verify the output quality of the generated prompt

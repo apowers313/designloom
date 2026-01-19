@@ -39,7 +39,7 @@ Read and analyze: {{researchFile}}
    ]
    ```
 
-4. **Create persona entities** using `design_create_persona` with:
+4. **Create persona entities** using `design_create --entity_type persona` with:
    - `id`: kebab-case memorable identifier
    - `name`: Full human name
    - `role`: Specific job title or function (from research)
@@ -55,13 +55,13 @@ Read and analyze: {{researchFile}}
    - Set confidence based on research evidence strength
 
 6. **Validate the work**:
-   - Run `design_validate` to confirm no errors
+   - Run `design_validate --check all` to confirm no errors
    - Verify each persona has at least 1 embedded source
    - Confirm all high-confidence research segments have corresponding personas
 
 **Format & Structure**:
 ```yaml
-design_create_persona --data '{
+design_create --entity_type persona --data '{
   "id": "analyst-alex",
   "name": "Alex Chen",
   "role": "Senior Financial Analyst",
@@ -117,7 +117,7 @@ design_create_persona --data '{
 - Persona created for each high-confidence research segment
 - Each persona has at least 1 embedded source with title, URL, and summary
 - Goals and frustrations trace back to research findings
-- `design_validate` returns no errors
+- `design_validate --check all` returns no errors
 - Research coverage: all major segments represented
 - Traceability table completed with no unexplained gaps
 
@@ -127,11 +127,9 @@ design_create_persona --data '{
 
 After completing this prompt, tell the user:
 
-**Next Prompt: 04 - Workflow Creation from Personas**
+**Next Prompt: 03 - Workflow Creation from Personas**
 
-With research-validated personas now in Designloom, the next step is to define the user workflows (journeys) that these personas need to accomplish. Prompt 04 will:
+With research-validated personas now in Designloom, the next step is to define the user workflows (journeys) that these personas need to accomplish. Prompt 03 will:
 - Analyze persona goals to identify workflows
 - Create workflow entities linked to personas
 - Define success criteria and starting states for each workflow
-
-Note: Prompt 03 does not exist in this sequence. Proceed directly to prompt 04.

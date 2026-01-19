@@ -13,7 +13,7 @@ tags: [handoff, gaps, development]
 
 1. **Run Gap Analysis**:
    ```
-   design_find_gaps
+   design_validate --check gaps
    ```
    For each gap identified:
    - Is it a P0/P1 gap? (Must fix before implementation)
@@ -46,9 +46,9 @@ tags: [handoff, gaps, development]
 
 5. **Execute Fixes**:
    For each gap:
-   - Update the appropriate entity using `design_update_*`
+   - Update the appropriate entity using `design_update --entity_type [type] --id [id]`
    - Verify the fix with the developer if possible
-   - Run `design_validate` after each fix
+   - Run `design_validate --check all` after each fix
 
 6. **Document Resolution**:
    Create a gap resolution report:
@@ -59,8 +59,8 @@ tags: [handoff, gaps, development]
 **Success Criteria**:
 - All Critical and High gaps resolved
 - Developer confirms documentation is complete for P0/P1
-- `design_validate` returns no errors
-- `design_find_gaps` shows only acceptable P2 gaps
+- `design_validate --check all` returns no errors
+- `design_validate --check gaps` shows only acceptable P2 gaps
 
 ---
 
@@ -68,12 +68,12 @@ tags: [handoff, gaps, development]
 
 After completing this prompt, tell the user:
 
-**Next Prompt: 16 - Implementation Prioritization**
+**Next Prompt: 15 - Implementation Prioritization**
 
-All critical gaps have been resolved and developers have confirmed the documentation is complete. The next step is to establish the implementation order. Prompt 16 will:
+All critical gaps have been resolved and developers have confirmed the documentation is complete. The next step is to establish the implementation order. Prompt 15 will:
 - Analyze workflow priority factors (frequency, criticality, persona coverage)
 - Analyze capability and component dependencies
 - Assign P0/P1/P2 priorities to all entities
 - Document prioritization rationale
 
-This prepares for the **Implementation** phase starting with prompt 17.
+This prepares for the **Implementation** phase starting with prompt 16.

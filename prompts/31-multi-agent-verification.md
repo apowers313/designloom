@@ -123,8 +123,8 @@ Address the required changes in priority order, then:
 
 **If FAIL (fundamental issues identified):**
 The work needs significant rework. Based on which perspective failed:
-- **User Advocate failed**: Revisit persona goals and workflow design (prompts 02, 04)
-- **Quality Auditor failed**: Run **28 - Entity Quality Review** for detailed assessment
-- **Developer failed**: Clarify specifications, add missing details (prompts 07, 10)
+- **User Advocate failed**: Revisit persona goals and workflow design (prompts 02, 03)
+- **Quality Auditor failed**: Run **27 - Entity Quality Review** for detailed assessment
+- **Developer failed**: Clarify specifications, add missing details (prompts 06, 09)
 
 This prompt can be used at any checkpoint in the workflow to verify work quality before proceeding to the next phase.

@@ -9,7 +9,7 @@ tags: [define, workflows, metrics]
 **Specific Requirements**:
 
 1. **Retrieve existing workflows**:
-   - Use `design_list_workflows` to retrieve all workflows
+   - Use `design_list --entity_type workflow` to retrieve all workflows
    - Identify workflows missing success criteria or with incomplete metrics
 
 2. **Apply the SMART framework** for each criterion:
@@ -31,7 +31,7 @@ tags: [define, workflows, metrics]
 
 4. **Check existing test data** (if available):
    ```
-   design_list_test_results --workflow_id [WORKFLOW_ID]
+   design_list --entity_type test-result --workflow_id [WORKFLOW_ID]
    ```
    If prior test results exist:
    - Review success_criteria_results from past tests
@@ -45,9 +45,9 @@ tags: [define, workflows, metrics]
    - Specify how to measure (usability test, analytics, survey)
    - If test data exists, ensure criteria align with achievable results
 
-6. **Update workflows** using `design_update_workflow`:
+6. **Update workflows** using `design_update --entity_type workflow`:
    ```yaml
-   design_update_workflow --id W01 --data '{
+   design_update --entity_type workflow --id W01 --data '{
      "success_criteria": [
        { "metric": "task_completion_rate", "target": "> 90%", "measurement": "usability test" },
        { "metric": "time_to_completion", "target": "< 120 seconds", "measurement": "analytics" }
@@ -56,17 +56,17 @@ tags: [define, workflows, metrics]
    ```
 
 7. **Validate the work**:
-   - Run `design_validate` to confirm no errors
+   - Run `design_validate --check all` to confirm no errors
    - Ensure all workflows have at least 2 success criteria
    - Confirm success criteria are testable in the Validation phase
-   - Note: Success criteria will be measured in usability testing (prompt 13) and captured as TestResult entities
+   - Note: Success criteria will be measured in usability testing (prompt 12) and captured as TestResult entities
 
 **Success Criteria**:
 - Each workflow has at least 2 success criteria with numeric targets
 - Each workflow has documented starting_state
 - Metrics are measurable (can be captured via testing or analytics)
 - Success criteria align with any existing test data (if available)
-- `design_validate` returns no errors
+- `design_validate --check all` returns no errors
 
 ---
 
@@ -74,9 +74,9 @@ tags: [define, workflows, metrics]
 
 After completing this prompt, tell the user:
 
-**Next Prompt: 06 - Capability Generation from Workflows**
+**Next Prompt: 05 - Capability Generation from Workflows**
 
-With workflows now having measurable success criteria, the next step is to identify what system capabilities are needed to support these workflows. Prompt 06 will:
+With workflows now having measurable success criteria, the next step is to identify what system capabilities are needed to support these workflows. Prompt 05 will:
 - Analyze each workflow to identify required system capabilities
 - Create capability entities using the INVEST framework
 - Link capabilities to the workflows they support

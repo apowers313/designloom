@@ -10,7 +10,7 @@ tags: [release, documentation, export]
 
 1. **Generate Architecture Diagrams** (if export tools available):
    ```
-   design_export_diagram --type all
+   design_export --format diagram --type all
    ```
    Creates:
    - Entity relationship diagram
@@ -19,7 +19,7 @@ tags: [release, documentation, export]
 
 2. **Generate Component Catalog**:
    ```
-   design_list_components
+   design_list --entity_type component
    ```
    For each component, document:
    - Name and description
@@ -30,7 +30,7 @@ tags: [release, documentation, export]
 
 3. **Generate Style Guide**:
    ```
-   design_list_tokens
+   design_list --entity_type tokens
    ```
    Document:
    - Color palette with values and usage
@@ -40,7 +40,7 @@ tags: [release, documentation, export]
 
 4. **Generate User Flow Documentation**:
    ```
-   design_list_workflows
+   design_list --entity_type workflow
    ```
    For each workflow, document:
    - User goal (what they're trying to accomplish)
@@ -50,7 +50,7 @@ tags: [release, documentation, export]
 
 5. **Generate Test Specifications** (if tool available):
    ```
-   design_generate_tests --all
+   design_export --format tests --all
    ```
    Creates test cases from:
    - Workflow success criteria
@@ -60,7 +60,7 @@ tags: [release, documentation, export]
 
 6. **Generate Accessibility Checklist**:
    ```
-   design_list_interactions
+   design_list --entity_type interaction
    ```
    For each component, document:
    - Keyboard requirements
@@ -104,9 +104,9 @@ tags: [release, documentation, export]
 
 After completing this prompt, tell the user:
 
-**Next Prompt: 25 - Implementation Retrospective**
+**Next Prompt: 24 - Implementation Retrospective**
 
-Documentation is complete for the release. The final step is to conduct a retrospective to capture lessons learned. Prompt 25 will:
+Documentation is complete for the release. The final step is to conduct a retrospective to capture lessons learned. Prompt 24 will:
 - Gather metrics from Designloom (entities created, updated, deviations)
 - Analyze test metrics (coverage, pass rates, issues found)
 - Document what went well and what could improve

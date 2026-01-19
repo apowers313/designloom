@@ -15,7 +15,7 @@ variables:
 
 1. **Retrieve Entities**:
    ```
-   design_list_{{entityType}}
+   design_list --entity_type {{entityType}}
    ```
 
 2. **Apply Quality Criteria** based on entity type:

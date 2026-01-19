@@ -31,7 +31,8 @@ describe("End-to-End Workflow", () => {
 
     it("completes full design-to-implementation cycle", () => {
         // 1. Create a persona
-        const personaResult = server.callTool("design_create_persona", {
+        const personaResult = server.callTool("design_create", {
+            entity_type: "persona",
             id: "test-user",
             name: "Test User",
             role: "Software Developer",
@@ -47,7 +48,8 @@ describe("End-to-End Workflow", () => {
         expect(JSON.parse(personaResult.content[0].text).success).toBe(true);
 
         // 2. Create capabilities
-        const capabilityResult1 = server.callTool("design_create_capability", {
+        const capabilityResult1 = server.callTool("design_create", {
+            entity_type: "capability",
             id: "graph-import",
             name: "Graph Import",
             category: "data",
@@ -58,7 +60,8 @@ describe("End-to-End Workflow", () => {
         expect(capabilityResult1.isError).toBe(undefined);
         expect(JSON.parse(capabilityResult1.content[0].text).success).toBe(true);
 
-        const capabilityResult2 = server.callTool("design_create_capability", {
+        const capabilityResult2 = server.callTool("design_create", {
+            entity_type: "capability",
             id: "graph-visualization",
             name: "Graph Visualization",
             category: "visualization",
@@ -70,7 +73,8 @@ describe("End-to-End Workflow", () => {
         expect(JSON.parse(capabilityResult2.content[0].text).success).toBe(true);
 
         // 3. Create a component that implements a capability
-        const componentResult = server.callTool("design_create_component", {
+        const componentResult = server.callTool("design_create", {
+            entity_type: "component",
             id: "import-dialog",
             name: "Import Dialog",
             category: "dialog",
@@ -82,7 +86,8 @@ describe("End-to-End Workflow", () => {
         expect(JSON.parse(componentResult.content[0].text).success).toBe(true);
 
         // 4. Create a workflow referencing all entities
-        const workflowResult = server.callTool("design_create_workflow", {
+        const workflowResult = server.callTool("design_create", {
+            entity_type: "workflow",
             id: "W01",
             name: "First Graph Load",
             category: "onboarding",
@@ -104,16 +109,17 @@ describe("End-to-End Workflow", () => {
         expect(JSON.parse(workflowResult.content[0].text).success).toBe(true);
 
         // 5. Validate the design
-        const validation = server.callTool("design_validate", {});
+        const validation = server.callTool("design_validate", { check: "all" });
         expect(validation.isError).toBe(undefined);
         const validationData = JSON.parse(validation.content[0].text);
         expect(validationData.valid).toBe(true);
         expect(validationData.errors).toHaveLength(0);
 
         // 6. Generate tests from workflow
-        const tests = server.callTool("design_generate_tests", {
-            workflowId: "W01",
-            format: "vitest",
+        const tests = server.callTool("design_export", {
+            format: "tests",
+            workflow_id: "W01",
+            test_format: "vitest",
         });
         expect(tests.isError).toBe(undefined);
         expect(tests.content[0].text).toContain("describe");
@@ -121,7 +127,8 @@ describe("End-to-End Workflow", () => {
         expect(tests.content[0].text).toContain("time_to_visualization");
 
         // 7. Update capability status to implemented
-        const updateResult = server.callTool("design_update_capability", {
+        const updateResult = server.callTool("design_update", {
+            entity_type: "capability",
             id: "graph-visualization",
             status: "implemented",
         });
@@ -129,7 +136,7 @@ describe("End-to-End Workflow", () => {
         expect(JSON.parse(updateResult.content[0].text).success).toBe(true);
 
         // 8. Coverage report shows progress
-        const coverage = server.callTool("design_coverage_report", {});
+        const coverage = server.callTool("design_analyze", { report: "coverage" });
         expect(coverage.isError).toBe(undefined);
         const coverageData = JSON.parse(coverage.content[0].text);
         // After updating graph-visualization to implemented, we should have 2 implemented capabilities
@@ -141,7 +148,8 @@ describe("End-to-End Workflow", () => {
         expect(coverageData.summary.implementation_status.implemented).toBe(2);
 
         // 9. Export diagram
-        const diagram = server.callTool("design_export_diagram", {
+        const diagram = server.callTool("design_export", {
+            format: "diagram",
             focus: "W01",
             depth: 1,
         });
@@ -150,7 +158,7 @@ describe("End-to-End Workflow", () => {
         expect(diagram.content[0].text).toContain("W01");
 
         // 10. Get workflow with resolved references
-        const workflow = server.callTool("design_get_workflow", { id: "W01" });
+        const workflow = server.callTool("design_get", { entity_type: "workflow", id: "W01" });
         expect(workflow.isError).toBe(undefined);
         const workflowData = JSON.parse(workflow.content[0].text);
         expect(workflowData.id).toBe("W01");
@@ -161,7 +169,8 @@ describe("End-to-End Workflow", () => {
 
     it("handles validation errors for broken references", () => {
         // Create a workflow with non-existent references
-        const workflowResult = server.callTool("design_create_workflow", {
+        const workflowResult = server.callTool("design_create", {
+            entity_type: "workflow",
             id: "W02",
             name: "Broken Workflow",
             category: "analysis",
@@ -175,7 +184,8 @@ describe("End-to-End Workflow", () => {
 
     it("handles complete workflow with link operations", () => {
         // Create capability first
-        server.callTool("design_create_capability", {
+        server.callTool("design_create", {
+            entity_type: "capability",
             id: "new-cap",
             name: "New Capability",
             category: "analysis",
@@ -184,7 +194,8 @@ describe("End-to-End Workflow", () => {
         });
 
         // Create workflow without the capability
-        server.callTool("design_create_workflow", {
+        server.callTool("design_create", {
+            entity_type: "workflow",
             id: "W03",
             name: "Linkable Workflow",
             category: "exploration",
@@ -193,6 +204,7 @@ describe("End-to-End Workflow", () => {
 
         // Link the capability to the workflow
         const linkResult = server.callTool("design_link", {
+            action: "link",
             from_type: "workflow",
             from_id: "W03",
             to_type: "capability",
@@ -203,12 +215,13 @@ describe("End-to-End Workflow", () => {
         expect(JSON.parse(linkResult.content[0].text).success).toBe(true);
 
         // Verify the link was created
-        const workflow = server.callTool("design_get_workflow", { id: "W03" });
+        const workflow = server.callTool("design_get", { entity_type: "workflow", id: "W03" });
         const workflowData = JSON.parse(workflow.content[0].text);
         expect(workflowData.requires_capabilities).toContain("new-cap");
 
         // Unlink the capability
-        const unlinkResult = server.callTool("design_unlink", {
+        const unlinkResult = server.callTool("design_link", {
+            action: "unlink",
             from_type: "workflow",
             from_id: "W03",
             to_type: "capability",
@@ -219,14 +232,15 @@ describe("End-to-End Workflow", () => {
         expect(JSON.parse(unlinkResult.content[0].text).success).toBe(true);
 
         // Verify the link was removed
-        const workflowAfter = server.callTool("design_get_workflow", { id: "W03" });
+        const workflowAfter = server.callTool("design_get", { entity_type: "workflow", id: "W03" });
         const workflowDataAfter = JSON.parse(workflowAfter.content[0].text);
         expect(workflowDataAfter.requires_capabilities).not.toContain("new-cap");
     });
 
     it("handles priority suggestions", () => {
         // Create multiple capabilities with different usage patterns
-        server.callTool("design_create_capability", {
+        server.callTool("design_create", {
+            entity_type: "capability",
             id: "high-demand",
             name: "High Demand",
             category: "data",
@@ -234,7 +248,8 @@ describe("End-to-End Workflow", () => {
             status: "planned",
         });
 
-        server.callTool("design_create_capability", {
+        server.callTool("design_create", {
+            entity_type: "capability",
             id: "low-demand",
             name: "Low Demand",
             category: "visualization",
@@ -243,7 +258,8 @@ describe("End-to-End Workflow", () => {
         });
 
         // Create workflows that use high-demand capability
-        server.callTool("design_create_workflow", {
+        server.callTool("design_create", {
+            entity_type: "workflow",
             id: "W04",
             name: "Workflow 1",
             category: "analysis",
@@ -251,7 +267,8 @@ describe("End-to-End Workflow", () => {
             requires_capabilities: ["high-demand"],
         });
 
-        server.callTool("design_create_workflow", {
+        server.callTool("design_create", {
+            entity_type: "workflow",
             id: "W05",
             name: "Workflow 2",
             category: "exploration",
@@ -259,7 +276,8 @@ describe("End-to-End Workflow", () => {
             requires_capabilities: ["high-demand"],
         });
 
-        server.callTool("design_create_workflow", {
+        server.callTool("design_create", {
+            entity_type: "workflow",
             id: "W06",
             name: "Workflow 3",
             category: "reporting",
@@ -268,7 +286,8 @@ describe("End-to-End Workflow", () => {
         });
 
         // Get priority suggestions
-        const suggestions = server.callTool("design_suggest_priority", {
+        const suggestions = server.callTool("design_analyze", {
+            report: "priority",
             focus: "capability",
         });
         expect(suggestions.isError).toBe(undefined);
@@ -287,7 +306,8 @@ describe("End-to-End Workflow", () => {
 
     it("handles delete operations with dependencies", () => {
         // Create a capability
-        server.callTool("design_create_capability", {
+        server.callTool("design_create", {
+            entity_type: "capability",
             id: "deletable-cap",
             name: "Deletable Capability",
             category: "data",
@@ -296,7 +316,8 @@ describe("End-to-End Workflow", () => {
         });
 
         // Create a workflow that uses it
-        server.callTool("design_create_workflow", {
+        server.callTool("design_create", {
+            entity_type: "workflow",
             id: "W07",
             name: "Dependent Workflow",
             category: "analysis",
@@ -305,7 +326,8 @@ describe("End-to-End Workflow", () => {
         });
 
         // Try to delete without force - should warn with an error
-        const deleteResult = server.callTool("design_delete_capability", {
+        const deleteResult = server.callTool("design_delete", {
+            entity_type: "capability",
             id: "deletable-cap",
             force: false,
         });
@@ -315,7 +337,8 @@ describe("End-to-End Workflow", () => {
         expect(deleteResult.content[0].text).toContain("W07");
 
         // Force delete - should clean up references
-        const forceDeleteResult = server.callTool("design_delete_capability", {
+        const forceDeleteResult = server.callTool("design_delete", {
+            entity_type: "capability",
             id: "deletable-cap",
             force: true,
         });
@@ -323,14 +346,15 @@ describe("End-to-End Workflow", () => {
         expect(JSON.parse(forceDeleteResult.content[0].text).success).toBe(true);
 
         // Verify the workflow no longer references the deleted capability
-        const workflow = server.callTool("design_get_workflow", { id: "W07" });
+        const workflow = server.callTool("design_get", { entity_type: "workflow", id: "W07" });
         const workflowData = JSON.parse(workflow.content[0].text);
         expect(workflowData.requires_capabilities).not.toContain("deletable-cap");
     });
 
     it("handles orphan detection", () => {
         // Create an orphaned capability (not used by any workflow)
-        server.callTool("design_create_capability", {
+        server.callTool("design_create", {
+            entity_type: "capability",
             id: "orphan-cap",
             name: "Orphan Capability",
             category: "analysis",
@@ -339,8 +363,9 @@ describe("End-to-End Workflow", () => {
         });
 
         // Find orphans
-        const orphans = server.callTool("design_find_orphans", {
-            entityType: "capability",
+        const orphans = server.callTool("design_validate", {
+            check: "orphans",
+            entity_type: "capability",
         });
         expect(orphans.isError).toBe(undefined);
         const orphansData = JSON.parse(orphans.content[0].text);
@@ -349,7 +374,8 @@ describe("End-to-End Workflow", () => {
 
     it("handles gap analysis", () => {
         // Create a workflow without capabilities
-        server.callTool("design_create_workflow", {
+        server.callTool("design_create", {
+            entity_type: "workflow",
             id: "W08",
             name: "Empty Workflow",
             category: "administration",
@@ -357,7 +383,7 @@ describe("End-to-End Workflow", () => {
         });
 
         // Find gaps
-        const gaps = server.callTool("design_find_gaps", {});
+        const gaps = server.callTool("design_validate", { check: "gaps" });
         expect(gaps.isError).toBe(undefined);
         const gapsData = JSON.parse(gaps.content[0].text);
         expect(gapsData.workflows_without_capabilities.some((w: { id: string }) => w.id === "W08")).toBe(true);

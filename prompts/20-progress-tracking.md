@@ -10,7 +10,7 @@ tags: [implementation, progress, tracking]
 
 1. **Run Coverage Report**:
    ```
-   design_coverage_report
+   design_analyze --report coverage
    ```
    Interpret results:
    - Workflow coverage: [X]% (target: >80% for P0/P1)
@@ -21,7 +21,7 @@ tags: [implementation, progress, tracking]
 
    **P0 Workflows**:
    ```
-   design_list_workflows --priority P0
+   design_list --entity_type workflow --priority P0
    ```
    Check status for each:
    - [ ] W01: [Implemented/In Progress/Not Started]
@@ -29,7 +29,7 @@ tags: [implementation, progress, tracking]
 
    **P1 Workflows**:
    ```
-   design_list_workflows --priority P1
+   design_list --entity_type workflow --priority P1
    ```
    - [ ] W03: [status]
    - [ ] W04: [status]
@@ -37,7 +37,7 @@ tags: [implementation, progress, tracking]
 3. **Update Implementation Status**:
    For completed workflows:
    ```yaml
-   design_update_workflow --id W01 --data '{
+   design_update --entity_type workflow --id W01 --data '{
      "validated": true,
      "priority": "P0",
      "notes": "IMPLEMENTED - [date], all success criteria met"
@@ -46,7 +46,7 @@ tags: [implementation, progress, tracking]
 
    For in-progress:
    ```yaml
-   design_update_workflow --id W02 --data '{
+   design_update --entity_type workflow --id W02 --data '{
      "priority": "P0",
      "notes": "IN PROGRESS - [X]% complete, blocked on [issue]"
    }'

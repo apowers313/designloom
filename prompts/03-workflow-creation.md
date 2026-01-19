@@ -19,7 +19,7 @@ Use this to ensure workflows address tasks identified in research and success cr
 **Specific Requirements**:
 
 1. **Retrieve and analyze existing personas**:
-   - Use `design_list_personas` to retrieve all personas
+   - Use `design_list --entity_type persona` to retrieve all personas
    - For each persona, identify goals that would require workflows
    - A workflow is needed when the goal involves multiple steps, has measurable success, and has clear start/end states
 
@@ -29,7 +29,7 @@ Use this to ensure workflows address tasks identified in research and success cr
    - What's true when they start? (starting_state)
    - Is this workflow distinct from others? (unique value)
 
-3. **Create workflow entities** using `design_create_workflow` with:
+3. **Create workflow entities** using `design_create --entity_type workflow` with:
    - `id`: W01, W02, etc. (sequential)
    - `name`: Action-oriented name (e.g., "First Data Import" not "Data Loading")
    - `category`: onboarding/analysis/exploration/reporting/collaboration/administration
@@ -46,13 +46,13 @@ Use this to ensure workflows address tasks identified in research and success cr
    - Help requests (% who access help) - target typically <10%
 
 5. **Validate the work**:
-   - Run `design_validate` to confirm no errors
-   - Run `design_find_orphans` to verify no orphan personas
+   - Run `design_validate --check all` to confirm no errors
+   - Run `design_validate --check orphans` to verify no orphan personas
    - Ensure each workflow is testable (could run a usability test measuring success criteria)
 
 **Format & Structure**:
 ```yaml
-design_create_workflow --data '{
+design_create --entity_type workflow --data '{
   "id": "W01",
   "name": "First Data Import",
   "category": "onboarding",
@@ -102,8 +102,8 @@ design_create_workflow --data '{
 - At least 1 workflow per persona
 - Each workflow has at least 2 success criteria with measurable targets
 - Each workflow has documented starting_state
-- `design_validate` returns no errors
-- `design_find_orphans` returns no orphan personas
+- `design_validate --check all` returns no errors
+- `design_validate --check orphans` returns no orphan personas
 - Traceability table completed showing research alignment
 - All major research-identified tasks have corresponding workflows
 
@@ -113,9 +113,9 @@ design_create_workflow --data '{
 
 After completing this prompt, tell the user:
 
-**Next Prompt: 05 - Success Criteria Definition**
+**Next Prompt: 04 - Success Criteria Definition**
 
-Workflows have been created, but success criteria may need refinement to ensure they are fully SMART (Specific, Measurable, Achievable, Relevant, Time-bound). Prompt 05 will:
+Workflows have been created, but success criteria may need refinement to ensure they are fully SMART (Specific, Measurable, Achievable, Relevant, Time-bound). Prompt 04 will:
 - Review each workflow's success criteria
 - Apply the SMART framework to ensure measurability
 - Add common UX metrics where appropriate (task completion rate, time on task, error rate)

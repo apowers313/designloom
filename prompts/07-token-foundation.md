@@ -11,7 +11,7 @@ tags: [design, tokens, design-system]
 
 **Specific Requirements**:
 
-1. **Create a token set** using `design_create_tokens` that includes:
+1. **Create a token set** using `design_create --entity_type tokens` that includes:
 
    **Colors (required)**:
    - `neutral`: Full scale 50-950 for grays
@@ -51,12 +51,12 @@ tags: [design, tokens, design-system]
    - Verify color is not the only indicator for any state
 
 4. **Validate the work**:
-   - Run `design_validate` to confirm no errors
+   - Run `design_validate --check all` to confirm no errors
    - Verify all required token categories are present
 
 **Format & Structure**:
 ```yaml
-design_create_tokens --data '{
+design_create --entity_type tokens --data '{
   "id": "default-theme",
   "name": "Default Theme",
   "colors": {
@@ -88,7 +88,7 @@ design_create_tokens --data '{
 - spacing.scale has at least 8 values
 - motion.durations defined
 - WCAG AA contrast verified and documented
-- `design_validate` returns no errors
+- `design_validate --check all` returns no errors
 
 ---
 
@@ -96,12 +96,12 @@ design_create_tokens --data '{
 
 After completing this prompt, tell the user:
 
-**Next Prompt: 09 - Interaction Pattern Creation**
+**Next Prompt: 08 - Interaction Pattern Creation**
 
-Design tokens are now established as the visual foundation. The next step is to define reusable interaction patterns that reference these tokens. Prompt 09 will:
+Design tokens are now established as the visual foundation. The next step is to define reusable interaction patterns that reference these tokens. Prompt 08 will:
 - Create base interaction patterns (button, input, toggle)
 - Define states for each pattern (default, hover, focus, disabled)
 - Specify transitions with timing from motion tokens
 - Include accessibility requirements (keyboard, ARIA, reduced motion)
 
-These patterns will be referenced by components in prompt 10.
+These patterns will be referenced by components in prompt 09.

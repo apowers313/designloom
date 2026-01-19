@@ -16,13 +16,13 @@ tags: [release, retrospective, process]
 
 2. **Gather Test Metrics**:
    ```
-   design_get_test_coverage
+   design_analyze --report test-coverage
    ```
    - Test coverage percentage: [workflow-persona combinations tested]
-   - Simulated tests: `design_list_test_results --test_type simulated` [count]
-   - Real user tests: `design_list_test_results --test_type real` [count]
+   - Simulated tests: `design_list --entity_type test-result --test_type simulated` [count]
+   - Real user tests: `design_list --entity_type test-result --test_type real` [count]
    - Pass rate: [count passed / total]
-   - Failed or partial tests: `design_list_test_results --status failed` and `--status partial`
+   - Failed or partial tests: `design_list --entity_type test-result --status failed` and `--status partial`
    - Total issues found: [sum of issues across all test results]
 
 3. **Analyze What Went Well**:
@@ -53,12 +53,7 @@ tags: [release, retrospective, process]
 
 6. **Document Retrospective**:
    ```yaml
-   design_create_source --data '{
-     "id": "retrospective-v1",
-     "title": "Implementation Retrospective - v1.0",
-     "url": "internal/retrospective",
-     "summary": "Key learnings: [top 3]. Recommendations: [top 3 changes]."
-   }'
+   design_create --entity_type source --id retrospective-v1 --title "Implementation Retrospective - v1.0" --url "internal/retrospective" --summary "Key learnings: [top 3]. Recommendations: [top 3 changes]."
    ```
 
 7. **Create Retrospective Report**:
@@ -101,15 +96,15 @@ tags: [release, retrospective, process]
 8. **Establish Maintenance Schedule**:
    ```
    Maintenance Schedule:
-   - Weekly: Run design_validate, check for drift
-   - Monthly: Run design_find_orphans, review coverage
-   - Per release: Full synchronization (prompt 23)
+   - Weekly: Run design_validate --check all, check for drift
+   - Monthly: Run design_validate --check orphans, review coverage
+   - Per release: Full synchronization (prompt 22)
    - Annually: Process retrospective
    ```
 
 **Success Criteria**:
 - Metrics gathered from Designloom (entities and test results)
-- Test metrics analyzed via `design_get_test_coverage`
+- Test metrics analyzed via `design_analyze --report test-coverage`
 - Learnings documented with specific examples
 - Testing insights included (simulated vs real test comparison)
 - Recommendations are actionable
@@ -131,18 +126,18 @@ This release cycle is finished. The Designloom workflow has taken you from resea
    Conduct new research for the next set of features or user needs.
 
 **For incremental feature additions to the existing product:**
-→ Use **27 - New Feature Addition**
+→ Use **26 - New Feature Addition**
    Add features following established Designloom patterns without full research cycle.
 
 **For ongoing maintenance:**
 Follow the maintenance schedule established in this retrospective:
-- Weekly: Run `design_validate`, check for drift
-- Monthly: Run `design_find_orphans`, review coverage
-- Per release: Run prompt 23 (Release Synchronization)
-- Annually: Run prompt 25 (Retrospective)
+- Weekly: Run `design_validate --check all`, check for drift
+- Monthly: Run `design_validate --check orphans`, review coverage
+- Per release: Run prompt 22 (Release Synchronization)
+- Annually: Run prompt 24 (Retrospective)
 
 **Utility prompts available at any time:**
-- **26** - Impact Analysis (before making changes)
-- **28** - Entity Quality Review (audit specific entity types)
-- **29** - Accessibility Audit (WCAG compliance check)
-- **30-32** - Meta-prompts for improving the process itself
+- **25** - Impact Analysis (before making changes)
+- **27** - Entity Quality Review (audit specific entity types)
+- **28** - Accessibility Audit (WCAG compliance check)
+- **29-31** - Meta-prompts for improving the process itself

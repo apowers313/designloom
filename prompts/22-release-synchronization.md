@@ -10,9 +10,9 @@ tags: [release, synchronization, documentation]
 
 1. **Final Validation**:
    ```
-   design_validate
-   design_find_orphans
-   design_coverage_report
+   design_validate --check all
+   design_validate --check orphans
+   design_analyze --report coverage
    ```
    Expected:
    - No validation errors
@@ -24,7 +24,7 @@ tags: [release, synchronization, documentation]
 
    **Workflows**:
    ```
-   design_list_workflows
+   design_list --entity_type workflow
    ```
    - [ ] All implemented workflows marked `validated: true`
    - [ ] Success criteria reflect actual measurements
@@ -32,7 +32,7 @@ tags: [release, synchronization, documentation]
 
    **Components**:
    ```
-   design_list_components
+   design_list --entity_type component
    ```
    - [ ] Props match implemented TypeScript interfaces
    - [ ] Deprecated components removed
@@ -40,7 +40,7 @@ tags: [release, synchronization, documentation]
 
    **Views**:
    ```
-   design_list_views
+   design_list --entity_type view
    ```
    - [ ] Layouts match implemented pages
    - [ ] States match implemented behavior
@@ -48,7 +48,7 @@ tags: [release, synchronization, documentation]
 
    **Tokens**:
    ```
-   design_list_tokens
+   design_list --entity_type tokens
    ```
    - [ ] Values match CSS custom properties
    - [ ] No hardcoded values in implementation
@@ -61,19 +61,15 @@ tags: [release, synchronization, documentation]
 
    ```yaml
    # Update Designloom to match implementation
-   design_update_component --id [ID] --data '{...updated...}'
+   design_update --entity_type component --id [ID] --data '{...updated...}'
 
    # Document intentional deviation
-   design_create_source --data '{
-     "id": "deviation-[id]",
-     "title": "Implementation Deviation - [Entity]",
-     "summary": "Implementation differs from original design because [reason]. Approved by [who]."
-   }'
+   design_create --entity_type source --id deviation-[id] --title "Implementation Deviation - [Entity]" --summary "Implementation differs from original design because [reason]. Approved by [who]."
    ```
 
 4. **Mark Final Status**:
    ```yaml
-   design_update_workflow --id W01 --data '{
+   design_update --entity_type workflow --id W01 --data '{
      "validated": true,
      "priority": "P0",
      "notes": "RELEASED v1.0 - All success criteria met"
@@ -81,9 +77,9 @@ tags: [release, synchronization, documentation]
    ```
 
 **Success Criteria**:
-- `design_validate` returns no errors
-- `design_find_orphans` returns empty
-- `design_coverage_report` shows 100% for P0/P1
+- `design_validate --check all` returns no errors
+- `design_validate --check orphans` returns empty
+- `design_analyze --report coverage` shows 100% for P0/P1
 - All P0/P1 workflows have `validated: true`
 - Designloom entities match implemented code (no drift)
 
@@ -93,9 +89,9 @@ tags: [release, synchronization, documentation]
 
 After completing this prompt, tell the user:
 
-**Next Prompt: 24 - Documentation Generation**
+**Next Prompt: 23 - Documentation Generation**
 
-Designloom is now synchronized with the implemented code. The next step is to generate the release documentation package. Prompt 24 will:
+Designloom is now synchronized with the implemented code. The next step is to generate the release documentation package. Prompt 23 will:
 - Generate architecture diagrams (if export tools available)
 - Create component catalog with props and accessibility
 - Generate style guide from token values

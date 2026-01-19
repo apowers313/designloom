@@ -44,11 +44,11 @@ tags: [design, interactions, patterns]
    - Colors: `"{colors.semantic.interactive}"`
    - Never use hardcoded values
 
-4. **Create interaction patterns** using `design_create_interaction`:
+4. **Create interaction patterns** using `design_create --entity_type interaction`:
 
 **Format & Structure**:
 ```yaml
-design_create_interaction --data '{
+design_create --entity_type interaction --data '{
   "id": "button-interaction",
   "name": "Button Interaction Pattern",
   "applies_to": ["button", "link-button", "icon-button"],
@@ -70,7 +70,7 @@ design_create_interaction --data '{
 ```
 
 5. **Validate the work**:
-   - Run `design_validate` to confirm no errors
+   - Run `design_validate --check all` to confirm no errors
    - Verify all patterns reference tokens (no hardcoded values)
    - Verify all patterns have accessibility section
 
@@ -80,7 +80,7 @@ design_create_interaction --data '{
 - All patterns have accessibility.keyboard section
 - All patterns have accessibility.aria section
 - All patterns have reduced_motion alternative
-- `design_validate` returns no errors
+- `design_validate --check all` returns no errors
 
 ---
 
@@ -88,12 +88,12 @@ design_create_interaction --data '{
 
 After completing this prompt, tell the user:
 
-**Next Prompt: 10 - Component Design from Capabilities**
+**Next Prompt: 09 - Component Design from Capabilities**
 
-Interaction patterns are now defined and can be referenced by components. The next step is to design UI components that implement the capabilities identified earlier. Prompt 10 will:
+Interaction patterns are now defined and can be referenced by components. The next step is to design UI components that implement the capabilities identified earlier. Prompt 09 will:
 - Create component entities for P0/P1 capabilities
 - Follow atomic design hierarchy (atoms → molecules → organisms)
 - Define props with TypeScript-style types
 - Link components to interaction patterns and capabilities
 
-Components will be assembled into views in prompt 11.
+Components will be assembled into views in prompt 10.

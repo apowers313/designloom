@@ -8,9 +8,8 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 
 import { DesignDocsStore } from "./store/yaml-store.js";
-import { getAnalysisTools, handleAnalysisTool } from "./tools/analysis.js";
-import { getMutationTools, handleMutationTool } from "./tools/mutation.js";
-import { getQueryTools, handleQueryTool, type ToolDefinition, type ToolResult } from "./tools/query.js";
+import { getConsolidatedTools, handleConsolidatedTool } from "./tools/consolidated.js";
+import type { ToolDefinition, ToolResult } from "./tools/query.js";
 
 // Re-export schemas and types
 export * from "./path-resolver.js";
@@ -32,7 +31,7 @@ export class DesignloomServer {
      */
     constructor(dataPath: string) {
         this.store = new DesignDocsStore(dataPath);
-        this.tools = [...getQueryTools(), ...getMutationTools(), ...getAnalysisTools()];
+        this.tools = getConsolidatedTools();
     }
 
     /**
@@ -50,20 +49,7 @@ export class DesignloomServer {
      * @returns Tool result with content and optional error flag
      */
     callTool(name: string, args: Record<string, unknown>): ToolResult {
-        // Try mutation tools first
-        const mutationResult = handleMutationTool(this.store, name, args);
-        if (mutationResult !== null) {
-            return mutationResult;
-        }
-
-        // Try analysis tools
-        const analysisResult = handleAnalysisTool(this.store, name, args);
-        if (analysisResult !== null) {
-            return analysisResult;
-        }
-
-        // Fall back to query tools
-        return handleQueryTool(this.store, name, args);
+        return handleConsolidatedTool(this.store, name, args);
     }
 }
 

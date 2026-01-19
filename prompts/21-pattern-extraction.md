@@ -18,7 +18,7 @@ tags: [implementation, patterns, refactoring]
 2. **Identify Pattern Candidates**:
    Review implemented components:
    ```
-   design_list_components
+   design_list --entity_type component
    ```
    Look for similarities in:
    - [ ] Similar prop interfaces
@@ -49,7 +49,7 @@ tags: [implementation, patterns, refactoring]
 4. **Create Pattern Entity**:
    If interaction pattern:
    ```yaml
-   design_create_interaction --data '{
+   design_create --entity_type interaction --data '{
      "id": "[pattern-id]",
      "name": "[Pattern Name]",
      "applies_to": ["[component-type-1]", "[component-type-2]"],
@@ -60,7 +60,7 @@ tags: [implementation, patterns, refactoring]
 
    If component pattern (abstract base):
    ```yaml
-   design_create_component --data '{
+   design_create --entity_type component --data '{
      "id": "[base-component-id]",
      "name": "[Base Component Name]",
      "description": "Abstract pattern for [purpose]",
@@ -72,14 +72,14 @@ tags: [implementation, patterns, refactoring]
 5. **Update Existing Components**:
    Link components to the pattern:
    ```yaml
-   design_update_component --id [component-id] --data '{
+   design_update --entity_type component --id [component-id] --data '{
      "interaction_pattern": "[pattern-id]"
    }'
    ```
 
    Or note the pattern relationship:
    ```yaml
-   design_update_component --id [component-id] --data '{
+   design_update --entity_type component --id [component-id] --data '{
      "notes": "Extends [pattern-id] pattern with [variations]"
    }'
    ```
@@ -87,11 +87,7 @@ tags: [implementation, patterns, refactoring]
 6. **Document Pattern**:
    Create Source documenting the extraction:
    ```yaml
-   design_create_source --data '{
-     "id": "pattern-[name]",
-     "title": "Pattern Extraction - [Name]",
-     "summary": "Extracted from [components]. Used by [N] components. Reduces duplication by [benefit]."
-   }'
+   design_create --entity_type source --id pattern-[name] --title "Pattern Extraction - [Name]" --summary "Extracted from [components]. Used by [N] components. Reduces duplication by [benefit]."
    ```
 
 **Success Criteria**:
@@ -99,7 +95,7 @@ tags: [implementation, patterns, refactoring]
 - Pattern entities created in Designloom
 - Existing components updated to reference patterns
 - Pattern documentation created
-- `design_validate` returns no errors
+- `design_validate --check all` returns no errors
 
 ---
 
@@ -109,8 +105,8 @@ After completing this prompt, determine the next step based on implementation st
 
 **Check remaining work:**
 ```
-design_list_workflows --priority P0
-design_list_workflows --priority P1
+design_list --entity_type workflow --priority P0
+design_list --entity_type workflow --priority P1
 ```
 
 **If more P0/P1 workflows need implementation:**

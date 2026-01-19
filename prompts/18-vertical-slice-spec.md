@@ -28,14 +28,14 @@ Traditional (Risky):          Vertical Slice (Lower Risk):
 
    **Step 1: Check for Golden Path**
    ```
-   design_list_workflows --priority P0
+   design_list --entity_type workflow --priority P0
    ```
    Look for workflow with "GOLDEN PATH" in notes that is NOT marked "IMPLEMENTED".
    If found → select this workflow.
 
    **Step 2: Find next P0 validated workflow**
    ```
-   design_list_workflows --priority P0 --validated true
+   design_list --entity_type workflow --priority P0 --validated true
    ```
    Filter results:
    - Exclude workflows with "IMPLEMENTED" in notes
@@ -46,14 +46,14 @@ Traditional (Risky):          Vertical Slice (Lower Risk):
 
    **Step 3: Fall back to P1 if no P0 available**
    ```
-   design_list_workflows --priority P1 --validated true
+   design_list --entity_type workflow --priority P1 --validated true
    ```
    Apply same filters as Step 2.
 
    **Step 4: If no validated workflows available**
    Report that no workflows are ready for implementation. Recommend running:
-   - Prompt 12 (Pre-Development Validation) to identify issues
-   - Prompt 13 (Testing) to validate workflows
+   - Prompt 11 (Pre-Development Validation) to identify issues
+   - Prompt 12 (Testing) to validate workflows
 
    **Document Selection**:
    ```
@@ -64,13 +64,13 @@ Traditional (Risky):          Vertical Slice (Lower Risk):
 
 2. **Get Workflow Definition**:
    ```
-   design_get_workflow --id [SELECTED_WORKFLOW_ID]
+   design_get --entity_type workflow --id [SELECTED_WORKFLOW_ID]
    ```
    Extract: goal, success criteria, starting state, required capabilities, target personas
 
 3. **Get View Specifications**:
    ```
-   design_list_views
+   design_list --entity_type view
    ```
    Filter to views linked to this workflow. For each view extract:
    - Layout type and zones
@@ -81,13 +81,13 @@ Traditional (Risky):          Vertical Slice (Lower Risk):
 4. **Get Component Specifications**:
    For each component in views:
    ```
-   design_get_component --id [COMPONENT_ID]
+   design_get --entity_type component --id [COMPONENT_ID]
    ```
    Extract: props with types, dependencies, interaction pattern, accessibility
 
 5. **Get Token Values**:
    ```
-   design_list_tokens
+   design_list --entity_type tokens
    ```
    Extract values needed for: colors, typography, spacing, motion
 
@@ -134,7 +134,7 @@ Traditional (Risky):          Vertical Slice (Lower Risk):
 7. **Update Workflow Status**:
    Mark the workflow as in progress:
    ```yaml
-   design_update_workflow --id [SELECTED_WORKFLOW_ID] --data '{
+   design_update --entity_type workflow --id [SELECTED_WORKFLOW_ID] --data '{
      "notes": "IN PROGRESS - Implementation spec generated [DATE]"
    }'
    ```
@@ -153,15 +153,15 @@ Traditional (Risky):          Vertical Slice (Lower Risk):
 
 After completing this prompt, tell the user:
 
-**Next Prompt: 20 - Implementation Validation Against Design**
+**Next Prompt: 19 - Implementation Validation Against Design**
 
-The implementation specification has been generated. After the development team implements this vertical slice, use prompt 20 to validate that the implementation matches the Designloom specifications. Prompt 20 will:
+The implementation specification has been generated. After the development team implements this vertical slice, use prompt 19 to validate that the implementation matches the Designloom specifications. Prompt 19 will:
 - Auto-select the next implemented workflow needing validation
 - Compare implementation against component, token, and interaction specs
 - Verify success criteria are met
 - Record results as a TestResult entity
 
-**Implementation happens between prompts 19 and 20.** The user should:
+**Implementation happens between prompts 18 and 19.** The user should:
 1. Share this implementation spec with developers
 2. Wait for implementation to complete
-3. Run prompt 20 to validate the implementation
+3. Run prompt 19 to validate the implementation

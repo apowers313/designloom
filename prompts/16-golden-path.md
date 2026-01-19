@@ -17,7 +17,7 @@ tags: [implementation, planning, vertical-slice]
 
 2. **List P0 Validated Workflows**:
    ```
-   design_list_workflows --priority P0 --validated true
+   design_list --entity_type workflow --priority P0 --validated true
    ```
    These P0 validated workflows are Golden Path candidates.
 
@@ -37,20 +37,20 @@ tags: [implementation, planning, vertical-slice]
 
    a. List required capabilities:
    ```
-   design_get_workflow --id [WORKFLOW_ID]
+   design_get --entity_type workflow --id [WORKFLOW_ID]
    # Check requires_capabilities field
    ```
 
    b. List required components:
    ```
    # For each capability, find implementing components
-   design_list_components
+   design_list --entity_type component
    # Filter by implements_capabilities
    ```
 
    c. List required views:
    ```
-   design_list_views
+   design_list --entity_type view
    # Filter to those linked to this workflow
    ```
 
@@ -83,7 +83,7 @@ tags: [implementation, planning, vertical-slice]
 
 6. **Update Workflow**:
    ```yaml
-   design_update_workflow --id [WORKFLOW_ID] --data '{
+   design_update --entity_type workflow --id [WORKFLOW_ID] --data '{
      "priority": "P0",
      "notes": "GOLDEN PATH - Implement first"
    }'
@@ -104,7 +104,7 @@ After completing this prompt, evaluate whether technical spikes are needed:
 
 **Check the Golden Path capabilities for technical risk:**
 ```
-design_get_workflow --id [GOLDEN_PATH_ID]
+design_get --entity_type workflow --id [GOLDEN_PATH_ID]
 ```
 Review the `requires_capabilities` field and check each capability for:
 - Notes mentioning "feasibility concern" or "spike needed"

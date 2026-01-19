@@ -9,11 +9,11 @@ tags: [design, views, layouts]
 **Specific Requirements**:
 
 1. **Identify screens needed**:
-   - Use `design_list_workflows --priority P0` and `--priority P1` to retrieve high-priority workflows
+   - Use `design_list --entity_type workflow --priority P0` and `--priority P1` to retrieve high-priority workflows
    - For each workflow, identify screens involved in the journey
    - Group related screens (same layout, different content = states, not separate views)
 
-2. **Create view entities** using `design_create_view` with:
+2. **Create view entities** using `design_create --entity_type view` with:
 
    **Basic Info (required)**:
    - `id`: V01, V02, etc.
@@ -50,13 +50,13 @@ tags: [design, views, layouts]
    - **List/table**: full-width with filtering header
 
 4. **Validate the work**:
-   - Run `design_validate` to confirm no errors
+   - Run `design_validate --check all` to confirm no errors
    - Verify all components referenced in zones exist in Designloom
    - Verify all P0/P1 workflows have at least 1 associated view
 
 **Format & Structure**:
 ```yaml
-design_create_view --data '{
+design_create --entity_type view --data '{
   "id": "V01",
   "name": "Data Import Dashboard",
   "description": "Main view for importing and managing data files",
@@ -85,7 +85,7 @@ design_create_view --data '{
 - Each view has all states: default, empty, loading, error
 - Each view has data_requirements documented
 - All components referenced in zones exist
-- `design_validate` returns no errors
+- `design_validate --check all` returns no errors
 
 ---
 
@@ -93,9 +93,9 @@ design_create_view --data '{
 
 After completing this prompt, tell the user:
 
-**Next Prompt: 12 - Pre-Development Validation**
+**Next Prompt: 11 - Pre-Development Validation**
 
-The **Design** phase is complete. Before proceeding to testing and handoff, a comprehensive validation is needed. Prompt 12 will:
+The **Design** phase is complete. Before proceeding to testing and handoff, a comprehensive validation is needed. Prompt 11 will:
 - Run schema validation across all entities
 - Check for orphaned entities (disconnected from the graph)
 - Perform gap analysis (missing capabilities or components)

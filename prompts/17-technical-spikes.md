@@ -17,7 +17,7 @@ tags: [implementation, planning, spikes]
 
 2. **Identify High-Complexity Capabilities**:
    ```
-   design_list_capabilities
+   design_list --entity_type capability
    ```
    Flag capabilities with:
    - New/unfamiliar technology
@@ -62,7 +62,7 @@ tags: [implementation, planning, spikes]
 
 5. **Update Capability with Spike Info**:
    ```yaml
-   design_update_capability --id [CAPABILITY_ID] --data '{
+   design_update --entity_type capability --id [CAPABILITY_ID] --data '{
      "priority": "P0",
      "notes": "SPIKE NEEDED: Evaluate [approach] vs [alternative]. Time-box: 2 days"
    }'
@@ -70,17 +70,12 @@ tags: [implementation, planning, spikes]
 
 6. **Document Spike Results** (after completion):
    ```yaml
-   design_create_source --data '{
-     "id": "spike-[capability-id]",
-     "title": "Technical Spike - [Capability Name]",
-     "url": "path/to/spike-results",
-     "summary": "Decision: [chosen approach]. Validated [what worked]. Risk: [remaining risk level]"
-   }'
+   design_create --entity_type source --id spike-[capability-id] --title "Technical Spike - [Capability Name]" --url "path/to/spike-results" --summary "Decision: [chosen approach]. Validated [what worked]. Risk: [remaining risk level]"
    ```
 
    Update capability:
    ```yaml
-   design_update_capability --id [CAPABILITY_ID] --data '{
+   design_update --entity_type capability --id [CAPABILITY_ID] --data '{
      "priority": "P0",
      "notes": "Spike complete. Approach: [chosen]. Risk: low"
    }'
@@ -99,12 +94,12 @@ tags: [implementation, planning, spikes]
 
 After completing this prompt, tell the user:
 
-**Next Prompt: 19 - Vertical Slice Implementation Spec**
+**Next Prompt: 18 - Vertical Slice Implementation Spec**
 
-Technical spikes have been planned (or completed). The next step is to generate the implementation specification for the Golden Path workflow. Prompt 19 will:
+Technical spikes have been planned (or completed). The next step is to generate the implementation specification for the Golden Path workflow. Prompt 18 will:
 - Auto-select the next workflow to implement (Golden Path first)
 - Retrieve all related views, components, and tokens
 - Generate a complete implementation specification
 - Define acceptance tests from workflow success criteria
 
-**Note:** If spikes are still in progress, wait for spike completion and update capability notes with results before running prompt 19. The spike results may affect the implementation approach.
+**Note:** If spikes are still in progress, wait for spike completion and update capability notes with results before running prompt 18. The spike results may affect the implementation approach.

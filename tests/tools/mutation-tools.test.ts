@@ -56,21 +56,29 @@ describe("Mutation Tools", () => {
         cleanupTempDir();
     });
 
-    describe("listTools includes mutation tools", () => {
-        it("lists all mutation tools", () => {
+    describe("listTools includes consolidated tools", () => {
+        it("lists all 10 consolidated tools", () => {
             const tools = server.listTools();
             const toolNames = tools.map(t => t.name);
 
-            expect(toolNames).toContain("design_create_workflow");
-            expect(toolNames).toContain("design_create_capability");
-            expect(toolNames).toContain("design_create_persona");
-            expect(toolNames).toContain("design_create_component");
+            expect(toolNames).toContain("design_create");
+            expect(toolNames).toContain("design_update");
+            expect(toolNames).toContain("design_delete");
+            expect(toolNames).toContain("design_list");
+            expect(toolNames).toContain("design_get");
+            expect(toolNames).toContain("design_link");
+            expect(toolNames).toContain("design_validate");
+            expect(toolNames).toContain("design_analyze");
+            expect(toolNames).toContain("design_export");
+            expect(toolNames).toContain("design_relations");
+            expect(tools.length).toBe(10);
         });
     });
 
-    describe("design_create_capability", () => {
+    describe("design_create capability", () => {
         it("creates capability with valid data", async () => {
-            const result = await server.callTool("design_create_capability", {
+            const result = await server.callTool("design_create", {
+                entity_type: "capability",
                 id: "new-cap",
                 name: "New Capability",
                 category: "data",
@@ -83,7 +91,8 @@ describe("Mutation Tools", () => {
         });
 
         it("returns error for invalid ID", async () => {
-            const result = await server.callTool("design_create_capability", {
+            const result = await server.callTool("design_create", {
+                entity_type: "capability",
                 id: "InvalidID",
                 name: "Invalid Capability",
                 category: "data",
@@ -95,7 +104,8 @@ describe("Mutation Tools", () => {
         });
 
         it("returns error for duplicate ID", async () => {
-            const result = await server.callTool("design_create_capability", {
+            const result = await server.callTool("design_create", {
+                entity_type: "capability",
                 id: "data-import", // Already exists in fixtures
                 name: "Duplicate",
                 category: "data",
@@ -107,9 +117,10 @@ describe("Mutation Tools", () => {
         });
     });
 
-    describe("design_create_persona", () => {
+    describe("design_create persona", () => {
         it("creates persona with valid data", async () => {
-            const result = await server.callTool("design_create_persona", {
+            const result = await server.callTool("design_create", {
+                entity_type: "persona",
                 id: "new-persona",
                 name: "New Persona",
                 role: "Tester",
@@ -125,7 +136,8 @@ describe("Mutation Tools", () => {
         });
 
         it("returns error for invalid ID", async () => {
-            const result = await server.callTool("design_create_persona", {
+            const result = await server.callTool("design_create", {
+                entity_type: "persona",
                 id: "Invalid Persona",
                 name: "Invalid",
                 role: "Test",
@@ -138,7 +150,8 @@ describe("Mutation Tools", () => {
         });
 
         it("returns error for duplicate ID", async () => {
-            const result = await server.callTool("design_create_persona", {
+            const result = await server.callTool("design_create", {
+                entity_type: "persona",
                 id: "analyst-alex", // Already exists in fixtures
                 name: "Duplicate",
                 role: "Test",
@@ -151,7 +164,8 @@ describe("Mutation Tools", () => {
         });
 
         it("creates persona with all UX fields", async () => {
-            const result = await server.callTool("design_create_persona", {
+            const result = await server.callTool("design_create", {
+                entity_type: "persona",
                 id: "ux-complete-persona",
                 name: "Sarah Chen",
                 role: "Senior Fraud Analyst",
@@ -185,7 +199,7 @@ describe("Mutation Tools", () => {
             expect(data.success).toBe(true);
 
             // Verify the created persona by fetching it
-            const getResult = await server.callTool("design_get_persona", { id: "ux-complete-persona" });
+            const getResult = await server.callTool("design_get", { entity_type: "persona", id: "ux-complete-persona" });
             expect(getResult.isError).toBeFalsy();
             const persona = JSON.parse(getResult.content[0].text);
             expect(persona.quote).toBe("I need to see the connections, not just the data points.");
@@ -198,9 +212,10 @@ describe("Mutation Tools", () => {
         });
     });
 
-    describe("design_create_component", () => {
+    describe("design_create component", () => {
         it("creates component with valid data", async () => {
-            const result = await server.callTool("design_create_component", {
+            const result = await server.callTool("design_create", {
+                entity_type: "component",
                 id: "new-component",
                 name: "New Component",
                 category: "dialog",
@@ -213,7 +228,8 @@ describe("Mutation Tools", () => {
         });
 
         it("creates component with valid capability reference", async () => {
-            const result = await server.callTool("design_create_component", {
+            const result = await server.callTool("design_create", {
+                entity_type: "component",
                 id: "cap-linked-comp",
                 name: "Capability Linked Component",
                 category: "control",
@@ -227,7 +243,8 @@ describe("Mutation Tools", () => {
         });
 
         it("returns error for non-existent capability reference", async () => {
-            const result = await server.callTool("design_create_component", {
+            const result = await server.callTool("design_create", {
+                entity_type: "component",
                 id: "bad-cap-comp",
                 name: "Bad Cap Component",
                 category: "dialog",
@@ -240,7 +257,8 @@ describe("Mutation Tools", () => {
         });
 
         it("returns error for invalid ID", async () => {
-            const result = await server.callTool("design_create_component", {
+            const result = await server.callTool("design_create", {
+                entity_type: "component",
                 id: "InvalidComponent",
                 name: "Invalid",
                 category: "dialog",
@@ -252,9 +270,10 @@ describe("Mutation Tools", () => {
         });
     });
 
-    describe("design_create_workflow", () => {
+    describe("design_create workflow", () => {
         it("creates workflow with valid data", async () => {
-            const result = await server.callTool("design_create_workflow", {
+            const result = await server.callTool("design_create", {
+                entity_type: "workflow",
                 id: "W50",
                 name: "Test Workflow",
                 category: "analysis",
@@ -267,7 +286,8 @@ describe("Mutation Tools", () => {
         });
 
         it("creates workflow with valid references", async () => {
-            const result = await server.callTool("design_create_workflow", {
+            const result = await server.callTool("design_create", {
+                entity_type: "workflow",
                 id: "W51",
                 name: "Full Ref Workflow",
                 category: "onboarding",
@@ -283,7 +303,8 @@ describe("Mutation Tools", () => {
         });
 
         it("returns error for non-existent capability reference", async () => {
-            const result = await server.callTool("design_create_workflow", {
+            const result = await server.callTool("design_create", {
+                entity_type: "workflow",
                 id: "W52",
                 name: "Bad Cap Workflow",
                 category: "analysis",
@@ -296,7 +317,8 @@ describe("Mutation Tools", () => {
         });
 
         it("returns error for non-existent persona reference", async () => {
-            const result = await server.callTool("design_create_workflow", {
+            const result = await server.callTool("design_create", {
+                entity_type: "workflow",
                 id: "W53",
                 name: "Bad Persona Workflow",
                 category: "analysis",
@@ -309,7 +331,8 @@ describe("Mutation Tools", () => {
         });
 
         it("returns error for invalid ID format", async () => {
-            const result = await server.callTool("design_create_workflow", {
+            const result = await server.callTool("design_create", {
+                entity_type: "workflow",
                 id: "workflow-1",
                 name: "Invalid ID Workflow",
                 category: "analysis",
@@ -321,7 +344,8 @@ describe("Mutation Tools", () => {
         });
 
         it("returns error for duplicate ID", async () => {
-            const result = await server.callTool("design_create_workflow", {
+            const result = await server.callTool("design_create", {
+                entity_type: "workflow",
                 id: "W01", // Already exists in fixtures
                 name: "Duplicate Workflow",
                 category: "analysis",
@@ -335,7 +359,8 @@ describe("Mutation Tools", () => {
 
     describe("error handling", () => {
         it("handles missing required fields gracefully", async () => {
-            const result = await server.callTool("design_create_workflow", {
+            const result = await server.callTool("design_create", {
+                entity_type: "workflow",
                 id: "W60",
                 // Missing name, category, goal
             });
@@ -344,9 +369,21 @@ describe("Mutation Tools", () => {
         });
 
         it("handles empty input", async () => {
-            const result = await server.callTool("design_create_capability", {});
+            const result = await server.callTool("design_create", {
+                entity_type: "capability",
+            });
 
             expect(result.isError).toBe(true);
+        });
+
+        it("handles missing entity_type", async () => {
+            const result = await server.callTool("design_create", {
+                id: "test-id",
+                name: "Test",
+            });
+
+            expect(result.isError).toBe(true);
+            expect(result.content[0].text).toContain("entity_type");
         });
     });
 });

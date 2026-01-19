@@ -14,7 +14,7 @@ tags: [change-management, features, planning]
 1. **Research Fit with Existing Design**:
    Analyze existing personas:
    ```
-   design_list_personas
+   design_list --entity_type persona
    ```
    - Which personas need this feature?
    - Does this require a new persona?
@@ -22,7 +22,7 @@ tags: [change-management, features, planning]
 2. **Define the Need**:
    Check existing workflows:
    ```
-   design_list_workflows
+   design_list --entity_type workflow
    ```
    - Does this feature serve an existing workflow?
    - If new workflow needed:
@@ -33,7 +33,7 @@ tags: [change-management, features, planning]
 3. **Specify Capability**:
    Check existing capabilities:
    ```
-   design_list_capabilities
+   design_list --entity_type capability
    ```
    - Can existing capabilities support this?
    - Create new capability:
@@ -44,7 +44,7 @@ tags: [change-management, features, planning]
 4. **Design Implementation**:
    Check existing components:
    ```
-   design_list_components
+   design_list --entity_type component
    ```
    - Can existing components implement this?
    - What new components are needed?
@@ -58,7 +58,7 @@ tags: [change-management, features, planning]
 5. **Integrate into Views**:
    Check existing views:
    ```
-   design_list_views
+   design_list --entity_type view
    ```
    - Which views need this feature?
    - What zones should include new components?
@@ -73,9 +73,9 @@ tags: [change-management, features, planning]
 
 7. **Validate the Addition**:
    ```
-   design_validate
-   design_find_gaps
-   design_coverage_report
+   design_validate --check all
+   design_validate --check gaps
+   design_analyze --report coverage
    ```
 
    Ensure the new feature is:
@@ -89,8 +89,8 @@ tags: [change-management, features, planning]
 - Workflow has measurable success criteria
 - Capability has at least 3 testable requirements
 - Components have props documented
-- `design_validate` returns no errors
-- `design_find_gaps` shows no new gaps
+- `design_validate --check all` returns no errors
+- `design_validate --check gaps` shows no new gaps
 
 ---
 

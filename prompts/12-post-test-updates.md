@@ -33,9 +33,9 @@ Simulated testing is NOT a replacement for real user testing, but it catches des
 First, understand what needs testing:
 
 ```
-design_get_test_coverage
-design_list_workflows
-design_list_personas
+design_analyze --report test-coverage
+design_list --entity_type workflow
+design_list --entity_type persona
 ```
 
 Identify:
@@ -53,8 +53,8 @@ For each untested workflow-persona combination, conduct a cognitive walkthrough:
 
 For each test, retrieve:
 ```
-design_get_workflow --id [workflow_id]
-design_get_persona --id [persona_id]
+design_get --entity_type workflow --id [workflow_id]
+design_get --entity_type persona --id [persona_id]
 ```
 
 ### 2.2 Adopt the Persona
@@ -95,7 +95,7 @@ Document issues with:
 ### 2.6 Create TestResult Entity
 
 ```yaml
-design_create_test_result --id TR-[WorkflowID]-[PersonaID]-001 --workflow_id [WorkflowID] --persona_id [PersonaID] --test_type simulated --date [TODAY] --status [passed|failed|partial] --confidence medium --success_criteria_results '[
+design_create --entity_type test-result --id TR-[WorkflowID]-[PersonaID]-001 --workflow_id [WorkflowID] --persona_id [PersonaID] --test_type simulated --date [TODAY] --status [passed|failed|partial] --confidence medium --success_criteria_results '[
   { "criterion": "...", "target": "...", "passed": true/false, "notes": "..." }
 ]' --issues '[
   { "severity": "major", "description": "...", "workflow_step": "...", "persona_factor": "...", "recommendation": "..." }
@@ -118,7 +118,7 @@ For real user testing data provided above:
 
 2. **Create TestResult entities** with `test_type: "real"` and `confidence: "high"`:
    ```yaml
-   design_create_test_result --id TR-[WorkflowID]-[PersonaID]-002 --workflow_id [WorkflowID] --persona_id [PersonaID] --test_type real --date [TEST_DATE] --status [passed|failed|partial] --confidence high --participants [N] --quotes '["User quote 1", "User quote 2"]' --success_criteria_results '[...]' --issues '[...]'
+   design_create --entity_type test-result --id TR-[WorkflowID]-[PersonaID]-002 --workflow_id [WorkflowID] --persona_id [PersonaID] --test_type real --date [TEST_DATE] --status [passed|failed|partial] --confidence high --participants [N] --quotes '["User quote 1", "User quote 2"]' --success_criteria_results '[...]' --issues '[...]'
    ```
 
 3. **Compare with simulated results**:
@@ -140,7 +140,7 @@ For each issue identified (from simulated or real testing):
 - **Workflow validated**: If 5+ real users passed, set `validated: true`
 
 ```yaml
-design_update_workflow --id W01 --data '{
+design_update --entity_type workflow --id W01 --data '{
   "validated": true,
   "success_criteria": [
     { "metric": "task_completion_rate", "target": "> 85%" },
@@ -164,7 +164,7 @@ design_update_workflow --id W01 --data '{
 - **Behavior assumption wrong**: Update characteristics
 
 ```yaml
-design_update_persona --id analyst-alex --data '{
+design_update --entity_type persona --id analyst-alex --data '{
   "frustrations": [
     "Existing frustration",
     "New: Progress indicator unclear during import (discovered in testing)"
@@ -181,8 +181,8 @@ design_update_persona --id analyst-alex --data '{
 
 1. **Run validation**:
    ```
-   design_validate
-   design_get_test_coverage
+   design_validate --check all
+   design_analyze --report test-coverage
    ```
 
 2. **Generate summary report**:
@@ -221,8 +221,8 @@ design_update_persona --id analyst-alex --data '{
 - [ ] Critical issues have recommendations
 - [ ] Design entities updated to reflect test findings
 - [ ] Test sources embedded in updated entities
-- [ ] `design_validate` returns no errors
-- [ ] `design_get_test_coverage` shows improved coverage
+- [ ] `design_validate --check all` returns no errors
+- [ ] `design_analyze --report test-coverage` shows improved coverage
 {{#if realTestResults}}- [ ] Real test results recorded with `test_type: "real"` and high confidence
 - [ ] Workflows with 5+ real user passes marked `validated: true`{{/if}}
 

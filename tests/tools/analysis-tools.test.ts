@@ -53,26 +53,20 @@ describe("Analysis Tools", () => {
         cleanupTempDir();
     });
 
-    describe("listTools includes analysis tools", () => {
-        it("lists all analysis tools", () => {
+    describe("listTools includes consolidated tools", () => {
+        it("lists all 10 consolidated tools", () => {
             const tools = server.listTools();
-            const analysisTools = tools.filter(t => t.name.startsWith("design_validate") ||
-                t.name.startsWith("design_coverage") ||
-                t.name.startsWith("design_find") ||
-                t.name.startsWith("design_suggest"));
-
-            expect(analysisTools.length).toBe(5);
+            expect(tools.length).toBe(10);
             expect(tools.some(t => t.name === "design_validate")).toBe(true);
-            expect(tools.some(t => t.name === "design_coverage_report")).toBe(true);
-            expect(tools.some(t => t.name === "design_find_orphans")).toBe(true);
-            expect(tools.some(t => t.name === "design_find_gaps")).toBe(true);
-            expect(tools.some(t => t.name === "design_suggest_priority")).toBe(true);
+            expect(tools.some(t => t.name === "design_analyze")).toBe(true);
+            expect(tools.some(t => t.name === "design_export")).toBe(true);
+            expect(tools.some(t => t.name === "design_relations")).toBe(true);
         });
     });
 
-    describe("design_validate", () => {
+    describe("design_validate --check all", () => {
         it("returns validation result via tool call", () => {
-            const result = server.callTool("design_validate", {});
+            const result = server.callTool("design_validate", { check: "all" });
 
             expect(result.isError).toBeFalsy();
             const parsed = JSON.parse(result.content[0].text);
@@ -82,9 +76,9 @@ describe("Analysis Tools", () => {
         });
     });
 
-    describe("design_coverage_report", () => {
+    describe("design_analyze --report coverage", () => {
         it("returns coverage report via tool call", () => {
-            const result = server.callTool("design_coverage_report", {});
+            const result = server.callTool("design_analyze", { report: "coverage" });
 
             expect(result.isError).toBeFalsy();
             const parsed = JSON.parse(result.content[0].text);
@@ -96,9 +90,9 @@ describe("Analysis Tools", () => {
         });
     });
 
-    describe("design_find_orphans", () => {
+    describe("design_validate --check orphans", () => {
         it("returns orphans for all entity types", () => {
-            const result = server.callTool("design_find_orphans", {});
+            const result = server.callTool("design_validate", { check: "orphans" });
 
             expect(result.isError).toBeFalsy();
             const parsed = JSON.parse(result.content[0].text);
@@ -108,7 +102,7 @@ describe("Analysis Tools", () => {
         });
 
         it("returns orphans filtered by entity type", () => {
-            const result = server.callTool("design_find_orphans", { entityType: "capability" });
+            const result = server.callTool("design_validate", { check: "orphans", entity_type: "capability" });
 
             expect(result.isError).toBeFalsy();
             const parsed = JSON.parse(result.content[0].text);
@@ -116,9 +110,9 @@ describe("Analysis Tools", () => {
         });
     });
 
-    describe("design_find_gaps", () => {
+    describe("design_validate --check gaps", () => {
         it("returns gap analysis via tool call", () => {
-            const result = server.callTool("design_find_gaps", {});
+            const result = server.callTool("design_validate", { check: "gaps" });
 
             expect(result.isError).toBeFalsy();
             const parsed = JSON.parse(result.content[0].text);
@@ -129,9 +123,9 @@ describe("Analysis Tools", () => {
         });
     });
 
-    describe("design_suggest_priority", () => {
+    describe("design_analyze --report priority", () => {
         it("returns priority suggestions for capabilities", () => {
-            const result = server.callTool("design_suggest_priority", { focus: "capability" });
+            const result = server.callTool("design_analyze", { report: "priority", focus: "capability" });
 
             expect(result.isError).toBeFalsy();
             const parsed = JSON.parse(result.content[0].text);
@@ -140,7 +134,7 @@ describe("Analysis Tools", () => {
         });
 
         it("returns priority suggestions for workflows", () => {
-            const result = server.callTool("design_suggest_priority", { focus: "workflow" });
+            const result = server.callTool("design_analyze", { report: "priority", focus: "workflow" });
 
             expect(result.isError).toBeFalsy();
             const parsed = JSON.parse(result.content[0].text);
@@ -149,7 +143,7 @@ describe("Analysis Tools", () => {
         });
 
         it("respects limit parameter", () => {
-            const result = server.callTool("design_suggest_priority", { focus: "capability", limit: 2 });
+            const result = server.callTool("design_analyze", { report: "priority", focus: "capability", limit: 2 });
 
             expect(result.isError).toBeFalsy();
             const parsed = JSON.parse(result.content[0].text);
@@ -157,17 +151,30 @@ describe("Analysis Tools", () => {
         });
 
         it("returns error for missing focus parameter", () => {
-            const result = server.callTool("design_suggest_priority", {});
+            const result = server.callTool("design_analyze", { report: "priority" });
 
             expect(result.isError).toBe(true);
             expect(result.content[0].text).toContain("focus");
         });
 
         it("returns error for invalid focus parameter", () => {
-            const result = server.callTool("design_suggest_priority", { focus: "invalid" });
+            const result = server.callTool("design_analyze", { report: "priority", focus: "invalid" });
 
             expect(result.isError).toBe(true);
             expect(result.content[0].text).toContain("focus");
+        });
+    });
+
+    describe("design_validate --check schema", () => {
+        it("returns schema version warnings", () => {
+            const result = server.callTool("design_validate", { check: "schema" });
+
+            expect(result.isError).toBeFalsy();
+            const parsed = JSON.parse(result.content[0].text);
+            expect(parsed).toHaveProperty("totalWarnings");
+            expect(parsed).toHaveProperty("byEntityType");
+            expect(parsed).toHaveProperty("bySeverity");
+            expect(parsed).toHaveProperty("warnings");
         });
     });
 });

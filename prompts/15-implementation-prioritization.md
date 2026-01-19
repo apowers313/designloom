@@ -11,7 +11,7 @@ tags: [implementation, planning, prioritization]
 1. **Analyze Workflow Priority Factors**:
    Retrieve all workflows:
    ```
-   design_list_workflows
+   design_list --entity_type workflow
    ```
    Score each workflow on these factors:
 
@@ -30,7 +30,7 @@ tags: [implementation, planning, prioritization]
 
 2. **Analyze Capability Priority Factors**:
    ```
-   design_list_capabilities
+   design_list --entity_type capability
    ```
    Score each capability:
 
@@ -42,7 +42,7 @@ tags: [implementation, planning, prioritization]
 
 3. **Analyze Component Priority Factors**:
    ```
-   design_list_components
+   design_list --entity_type component
    ```
 
    | Factor | How to Assess |
@@ -54,9 +54,9 @@ tags: [implementation, planning, prioritization]
 4. **Update Entities with Priority**:
    For each entity, use the dedicated `priority` field:
    ```yaml
-   design_update_workflow --id W01 --data '{"priority": "P0"}'
-   design_update_capability --id data-import --data '{"priority": "P0"}'
-   design_update_component --id data-import-dialog --data '{"priority": "P1"}'
+   design_update --entity_type workflow --id W01 --data '{"priority": "P0"}'
+   design_update --entity_type capability --id data-import --data '{"priority": "P0"}'
+   design_update --entity_type component --id data-import-dialog --data '{"priority": "P1"}'
    ```
 
    Priority values: `"P0"` (critical), `"P1"` (important), `"P2"` (nice-to-have)
@@ -64,12 +64,7 @@ tags: [implementation, planning, prioritization]
 5. **Document Prioritization Rationale**:
    Create a Source entity:
    ```yaml
-   design_create_source --data '{
-     "id": "implementation-priorities",
-     "title": "Implementation Priority Assignment",
-     "url": "internal",
-     "summary": "P0: W01, W03 (core onboarding). P1: W02, W04 (reporting). P2: W05 (admin). Rationale: ..."
-   }'
+   design_create --entity_type source --id implementation-priorities --title "Implementation Priority Assignment" --url "internal" --summary "P0: W01, W03 (core onboarding). P1: W02, W04 (reporting). P2: W05 (admin). Rationale: ..."
    ```
 
 **Success Criteria**:
@@ -79,7 +74,7 @@ tags: [implementation, planning, prioritization]
 - P0 workflows have `validated: true`
 - Prioritization rationale documented as Source entity
 - Implementation order is logical (dependencies respected)
-- Can filter by priority: `design_list_workflows --priority P0`
+- Can filter by priority: `design_list --entity_type workflow --priority P0`
 
 ---
 
@@ -87,9 +82,9 @@ tags: [implementation, planning, prioritization]
 
 After completing this prompt, tell the user:
 
-**Next Prompt: 17 - Golden Path Identification**
+**Next Prompt: 16 - Golden Path Identification**
 
-Priorities are now assigned to all entities. The next step is to identify the **Golden Path** - the first vertical slice workflow to implement. Prompt 17 will:
+Priorities are now assigned to all entities. The next step is to identify the **Golden Path** - the first vertical slice workflow to implement. Prompt 16 will:
 - Evaluate P0 validated workflows as candidates
 - Select the workflow that best establishes patterns for the entire application
 - Trace all dependencies (capabilities, components, views, tokens)

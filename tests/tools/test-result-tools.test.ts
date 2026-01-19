@@ -57,29 +57,25 @@ describe("TestResult Tools", () => {
         cleanupTempDir();
     });
 
-    describe("listTools includes test result tools", () => {
-        it("lists all test result query tools", () => {
+    describe("listTools includes consolidated tools", () => {
+        it("lists all 10 consolidated tools", () => {
             const tools = server.listTools();
             const toolNames = tools.map(t => t.name);
 
-            expect(toolNames).toContain("design_list_test_results");
-            expect(toolNames).toContain("design_get_test_result");
-            expect(toolNames).toContain("design_get_test_coverage");
-        });
-
-        it("lists all test result mutation tools", () => {
-            const tools = server.listTools();
-            const toolNames = tools.map(t => t.name);
-
-            expect(toolNames).toContain("design_create_test_result");
-            expect(toolNames).toContain("design_update_test_result");
-            expect(toolNames).toContain("design_delete_test_result");
+            expect(tools.length).toBe(10);
+            expect(toolNames).toContain("design_list");
+            expect(toolNames).toContain("design_get");
+            expect(toolNames).toContain("design_create");
+            expect(toolNames).toContain("design_update");
+            expect(toolNames).toContain("design_delete");
+            expect(toolNames).toContain("design_analyze");
         });
     });
 
-    describe("design_create_test_result", () => {
+    describe("design_create test-result", () => {
         it("creates test result with valid data", () => {
-            const result = server.callTool("design_create_test_result", {
+            const result = server.callTool("design_create", {
+                entity_type: "test-result",
                 id: "TR-W01-analyst-alex-001",
                 workflow_id: "W01",
                 persona_id: "analyst-alex",
@@ -94,7 +90,8 @@ describe("TestResult Tools", () => {
         });
 
         it("creates test result with all fields", () => {
-            const result = server.callTool("design_create_test_result", {
+            const result = server.callTool("design_create", {
+                entity_type: "test-result",
                 id: "TR-W01-analyst-alex-002",
                 workflow_id: "W01",
                 persona_id: "analyst-alex",
@@ -130,7 +127,8 @@ describe("TestResult Tools", () => {
         });
 
         it("returns error for invalid ID format", () => {
-            const result = server.callTool("design_create_test_result", {
+            const result = server.callTool("design_create", {
+                entity_type: "test-result",
                 id: "invalid-id",
                 workflow_id: "W01",
                 persona_id: "analyst-alex",
@@ -144,7 +142,8 @@ describe("TestResult Tools", () => {
         });
 
         it("returns error for non-existent workflow", () => {
-            const result = server.callTool("design_create_test_result", {
+            const result = server.callTool("design_create", {
+                entity_type: "test-result",
                 id: "TR-W99-analyst-alex-001",
                 workflow_id: "W99",
                 persona_id: "analyst-alex",
@@ -158,7 +157,8 @@ describe("TestResult Tools", () => {
         });
 
         it("returns error for non-existent persona", () => {
-            const result = server.callTool("design_create_test_result", {
+            const result = server.callTool("design_create", {
+                entity_type: "test-result",
                 id: "TR-W01-nonexistent-001",
                 workflow_id: "W01",
                 persona_id: "nonexistent",
@@ -173,7 +173,8 @@ describe("TestResult Tools", () => {
 
         it("returns error for duplicate ID", () => {
             // Create first
-            server.callTool("design_create_test_result", {
+            server.callTool("design_create", {
+                entity_type: "test-result",
                 id: "TR-W01-analyst-alex-003",
                 workflow_id: "W01",
                 persona_id: "analyst-alex",
@@ -183,7 +184,8 @@ describe("TestResult Tools", () => {
             });
 
             // Try duplicate
-            const result = server.callTool("design_create_test_result", {
+            const result = server.callTool("design_create", {
+                entity_type: "test-result",
                 id: "TR-W01-analyst-alex-003",
                 workflow_id: "W01",
                 persona_id: "analyst-alex",
@@ -197,9 +199,10 @@ describe("TestResult Tools", () => {
         });
     });
 
-    describe("design_update_test_result", () => {
+    describe("design_update test-result", () => {
         beforeEach(() => {
-            server.callTool("design_create_test_result", {
+            server.callTool("design_create", {
+                entity_type: "test-result",
                 id: "TR-W01-analyst-alex-010",
                 workflow_id: "W01",
                 persona_id: "analyst-alex",
@@ -210,7 +213,8 @@ describe("TestResult Tools", () => {
         });
 
         it("updates test result status", () => {
-            const result = server.callTool("design_update_test_result", {
+            const result = server.callTool("design_update", {
+                entity_type: "test-result",
                 id: "TR-W01-analyst-alex-010",
                 status: "partial",
             });
@@ -221,7 +225,8 @@ describe("TestResult Tools", () => {
         });
 
         it("updates test result with issues", () => {
-            const result = server.callTool("design_update_test_result", {
+            const result = server.callTool("design_update", {
+                entity_type: "test-result",
                 id: "TR-W01-analyst-alex-010",
                 status: "failed",
                 issues: [
@@ -235,7 +240,8 @@ describe("TestResult Tools", () => {
             expect(result.isError).toBeFalsy();
 
             // Verify the update
-            const getResult = server.callTool("design_get_test_result", {
+            const getResult = server.callTool("design_get", {
+                entity_type: "test-result",
                 id: "TR-W01-analyst-alex-010",
             });
             const testResult = JSON.parse(getResult.content[0].text);
@@ -244,7 +250,8 @@ describe("TestResult Tools", () => {
         });
 
         it("returns error for non-existent test result", () => {
-            const result = server.callTool("design_update_test_result", {
+            const result = server.callTool("design_update", {
+                entity_type: "test-result",
                 id: "TR-W99-nonexistent-001",
                 status: "failed",
             });
@@ -254,9 +261,10 @@ describe("TestResult Tools", () => {
         });
     });
 
-    describe("design_delete_test_result", () => {
+    describe("design_delete test-result", () => {
         beforeEach(() => {
-            server.callTool("design_create_test_result", {
+            server.callTool("design_create", {
+                entity_type: "test-result",
                 id: "TR-W01-analyst-alex-020",
                 workflow_id: "W01",
                 persona_id: "analyst-alex",
@@ -267,7 +275,8 @@ describe("TestResult Tools", () => {
         });
 
         it("deletes test result", () => {
-            const result = server.callTool("design_delete_test_result", {
+            const result = server.callTool("design_delete", {
+                entity_type: "test-result",
                 id: "TR-W01-analyst-alex-020",
             });
 
@@ -276,14 +285,16 @@ describe("TestResult Tools", () => {
             expect(data.success).toBe(true);
 
             // Verify deleted
-            const getResult = server.callTool("design_get_test_result", {
+            const getResult = server.callTool("design_get", {
+                entity_type: "test-result",
                 id: "TR-W01-analyst-alex-020",
             });
             expect(getResult.isError).toBe(true);
         });
 
         it("returns error for non-existent test result", () => {
-            const result = server.callTool("design_delete_test_result", {
+            const result = server.callTool("design_delete", {
+                entity_type: "test-result",
                 id: "TR-W99-nonexistent-001",
             });
 
@@ -292,10 +303,11 @@ describe("TestResult Tools", () => {
         });
     });
 
-    describe("design_list_test_results", () => {
+    describe("design_list test-result", () => {
         beforeEach(() => {
             // Create executive-eve persona for testing
-            server.callTool("design_create_persona", {
+            server.callTool("design_create", {
+                entity_type: "persona",
                 id: "executive-eve",
                 name: "Executive Eve",
                 role: "Executive",
@@ -304,7 +316,8 @@ describe("TestResult Tools", () => {
             });
 
             // Create multiple test results
-            server.callTool("design_create_test_result", {
+            server.callTool("design_create", {
+                entity_type: "test-result",
                 id: "TR-W01-analyst-alex-030",
                 workflow_id: "W01",
                 persona_id: "analyst-alex",
@@ -313,7 +326,8 @@ describe("TestResult Tools", () => {
                 status: "passed",
             });
 
-            server.callTool("design_create_test_result", {
+            server.callTool("design_create", {
+                entity_type: "test-result",
                 id: "TR-W01-analyst-alex-031",
                 workflow_id: "W01",
                 persona_id: "analyst-alex",
@@ -323,7 +337,8 @@ describe("TestResult Tools", () => {
                 issues: [{ severity: "critical", description: "Blocked" }],
             });
 
-            server.callTool("design_create_test_result", {
+            server.callTool("design_create", {
+                entity_type: "test-result",
                 id: "TR-W02-executive-eve-001",
                 workflow_id: "W02",
                 persona_id: "executive-eve",
@@ -334,7 +349,7 @@ describe("TestResult Tools", () => {
         });
 
         it("lists all test results", () => {
-            const result = server.callTool("design_list_test_results", {});
+            const result = server.callTool("design_list", { entity_type: "test-result" });
 
             expect(result.isError).toBeFalsy();
             const data = JSON.parse(result.content[0].text);
@@ -342,7 +357,8 @@ describe("TestResult Tools", () => {
         });
 
         it("filters by workflow_id", () => {
-            const result = server.callTool("design_list_test_results", {
+            const result = server.callTool("design_list", {
+                entity_type: "test-result",
                 workflow_id: "W01",
             });
 
@@ -353,7 +369,8 @@ describe("TestResult Tools", () => {
         });
 
         it("filters by persona_id", () => {
-            const result = server.callTool("design_list_test_results", {
+            const result = server.callTool("design_list", {
+                entity_type: "test-result",
                 persona_id: "analyst-alex",
             });
 
@@ -363,7 +380,8 @@ describe("TestResult Tools", () => {
         });
 
         it("filters by test_type", () => {
-            const result = server.callTool("design_list_test_results", {
+            const result = server.callTool("design_list", {
+                entity_type: "test-result",
                 test_type: "real",
             });
 
@@ -373,7 +391,8 @@ describe("TestResult Tools", () => {
         });
 
         it("filters by status", () => {
-            const result = server.callTool("design_list_test_results", {
+            const result = server.callTool("design_list", {
+                entity_type: "test-result",
                 status: "passed",
             });
 
@@ -383,7 +402,8 @@ describe("TestResult Tools", () => {
         });
 
         it("filters by has_issues", () => {
-            const result = server.callTool("design_list_test_results", {
+            const result = server.callTool("design_list", {
+                entity_type: "test-result",
                 has_issues: true,
             });
 
@@ -394,9 +414,10 @@ describe("TestResult Tools", () => {
         });
     });
 
-    describe("design_get_test_result", () => {
+    describe("design_get test-result", () => {
         beforeEach(() => {
-            server.callTool("design_create_test_result", {
+            server.callTool("design_create", {
+                entity_type: "test-result",
                 id: "TR-W01-analyst-alex-040",
                 workflow_id: "W01",
                 persona_id: "analyst-alex",
@@ -408,7 +429,8 @@ describe("TestResult Tools", () => {
         });
 
         it("gets test result by ID", () => {
-            const result = server.callTool("design_get_test_result", {
+            const result = server.callTool("design_get", {
+                entity_type: "test-result",
                 id: "TR-W01-analyst-alex-040",
             });
 
@@ -419,7 +441,8 @@ describe("TestResult Tools", () => {
         });
 
         it("returns test result with resolved references", () => {
-            const result = server.callTool("design_get_test_result", {
+            const result = server.callTool("design_get", {
+                entity_type: "test-result",
                 id: "TR-W01-analyst-alex-040",
             });
 
@@ -431,7 +454,8 @@ describe("TestResult Tools", () => {
         });
 
         it("returns error for non-existent test result", () => {
-            const result = server.callTool("design_get_test_result", {
+            const result = server.callTool("design_get", {
+                entity_type: "test-result",
                 id: "TR-W99-nonexistent-001",
             });
 
@@ -440,9 +464,9 @@ describe("TestResult Tools", () => {
         });
     });
 
-    describe("design_get_test_coverage", () => {
+    describe("design_analyze --report test-coverage", () => {
         it("returns coverage report", () => {
-            const result = server.callTool("design_get_test_coverage", {});
+            const result = server.callTool("design_analyze", { report: "test-coverage" });
 
             expect(result.isError).toBeFalsy();
             const data = JSON.parse(result.content[0].text);
@@ -454,11 +478,12 @@ describe("TestResult Tools", () => {
         });
 
         it("updates coverage after adding test results", () => {
-            const beforeResult = server.callTool("design_get_test_coverage", {});
+            const beforeResult = server.callTool("design_analyze", { report: "test-coverage" });
             const beforeData = JSON.parse(beforeResult.content[0].text);
 
             // Add a test result
-            server.callTool("design_create_test_result", {
+            server.callTool("design_create", {
+                entity_type: "test-result",
                 id: "TR-W01-analyst-alex-050",
                 workflow_id: "W01",
                 persona_id: "analyst-alex",
@@ -467,7 +492,7 @@ describe("TestResult Tools", () => {
                 status: "passed",
             });
 
-            const afterResult = server.callTool("design_get_test_coverage", {});
+            const afterResult = server.callTool("design_analyze", { report: "test-coverage" });
             const afterData = JSON.parse(afterResult.content[0].text);
 
             expect(afterData.tested_combinations).toBe(beforeData.tested_combinations + 1);
@@ -475,7 +500,8 @@ describe("TestResult Tools", () => {
         });
 
         it("tracks real and simulated test counts", () => {
-            server.callTool("design_create_test_result", {
+            server.callTool("design_create", {
+                entity_type: "test-result",
                 id: "TR-W01-analyst-alex-051",
                 workflow_id: "W01",
                 persona_id: "analyst-alex",
@@ -484,7 +510,8 @@ describe("TestResult Tools", () => {
                 status: "passed",
             });
 
-            server.callTool("design_create_test_result", {
+            server.callTool("design_create", {
+                entity_type: "test-result",
                 id: "TR-W01-analyst-alex-052",
                 workflow_id: "W01",
                 persona_id: "analyst-alex",
@@ -493,7 +520,7 @@ describe("TestResult Tools", () => {
                 status: "passed",
             });
 
-            const result = server.callTool("design_get_test_coverage", {});
+            const result = server.callTool("design_analyze", { report: "test-coverage" });
             const data = JSON.parse(result.content[0].text);
 
             expect(data.simulated_test_count).toBe(1);
@@ -503,7 +530,8 @@ describe("TestResult Tools", () => {
 
     describe("error handling", () => {
         it("handles missing required fields for create", () => {
-            const result = server.callTool("design_create_test_result", {
+            const result = server.callTool("design_create", {
+                entity_type: "test-result",
                 id: "TR-W01-analyst-alex-060",
                 // Missing workflow_id, persona_id, test_type, date, status
             });
@@ -512,7 +540,8 @@ describe("TestResult Tools", () => {
         });
 
         it("handles empty input for update", () => {
-            server.callTool("design_create_test_result", {
+            server.callTool("design_create", {
+                entity_type: "test-result",
                 id: "TR-W01-analyst-alex-061",
                 workflow_id: "W01",
                 persona_id: "analyst-alex",
@@ -522,7 +551,8 @@ describe("TestResult Tools", () => {
             });
 
             // Update with just id should not fail (no changes)
-            const result = server.callTool("design_update_test_result", {
+            const result = server.callTool("design_update", {
+                entity_type: "test-result",
                 id: "TR-W01-analyst-alex-061",
             });
 

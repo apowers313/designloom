@@ -23,7 +23,7 @@ variables:
 1. **Identify Direct Dependencies**:
    Retrieve the entity and examine references:
    ```
-   design_get_{{entityType}} --id {{entityId}}
+   design_get --entity_type {{entityType}} --id {{entityId}}
    ```
    List all entities that:
    - Reference this entity (dependents)
@@ -96,11 +96,11 @@ After completing this impact analysis, tell the user:
 Based on the analysis, the user should decide whether to proceed with the proposed change. If proceeding:
 
 1. **Execute the change plan** generated above (step-by-step updates to Designloom entities)
-2. **Run validation** after changes: `design_validate` and `design_find_gaps`
+2. **Run validation** after changes: `design_validate --check all` and `design_validate --check gaps`
 3. **Return to the main workflow** at the appropriate phase based on what was changed:
-   - Workflow changes → may need re-testing (prompt 13)
-   - Capability changes → may need component updates (prompt 10)
-   - Component changes → may need view updates (prompt 11)
+   - Workflow changes → may need re-testing (prompt 12)
+   - Capability changes → may need component updates (prompt 09)
+   - Component changes → may need view updates (prompt 10)
    - Token changes → may need visual regression testing
 
 This prompt can be run at any time when considering changes to existing Designloom entities.

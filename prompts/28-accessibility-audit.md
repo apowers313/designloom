@@ -10,7 +10,7 @@ tags: [quality, accessibility, wcag]
 
 1. **Audit Components**:
    ```
-   design_list_components
+   design_list --entity_type component
    ```
    For each component, verify:
 
@@ -36,7 +36,7 @@ tags: [quality, accessibility, wcag]
 
 2. **Audit Interactions**:
    ```
-   design_list_interactions
+   design_list --entity_type interaction
    ```
    For each interaction pattern:
    - [ ] Has accessibility.keyboard section?
@@ -45,7 +45,7 @@ tags: [quality, accessibility, wcag]
 
 3. **Audit Tokens**:
    ```
-   design_list_tokens
+   design_list --entity_type tokens
    ```
    For color tokens:
    - [ ] Do text/background combinations meet WCAG AA (4.5:1)?

@@ -1,8 +1,5 @@
-export { getAnalysisTools, handleAnalysisTool } from "./analysis.js";
-export { getMutationTools, handleMutationTool } from "./mutation.js";
+export { type ConsolidatedEntityType,getConsolidatedTools, handleConsolidatedTool } from "./consolidated.js";
 export {
-    getQueryTools,
-    handleQueryTool,
     type ToolDefinition,
     type ToolResult,
 } from "./query.js";

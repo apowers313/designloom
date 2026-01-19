@@ -98,7 +98,7 @@ After completing this prompt improvement, tell the user:
 The improved prompt has been generated. To use it:
 
 1. **Test the improved prompt** with a similar task to verify it produces better output
-2. **If the prompt is part of the Designloom workflow** (prompts 01-32):
+2. **If the prompt is part of the Designloom workflow** (prompts 01-31):
    - Update the prompt file in `./prompts/` with the improved version
    - Document the change in the changelog section of the prompt
 3. **If issues persist**, run this prompt again with the new output to iterate further
@@ -106,5 +106,5 @@ The improved prompt has been generated. To use it:
 This prompt can be used at any time to improve any prompt in the Designloom workflow or custom prompts you create.
 
 **Related utility prompts:**
-- **31 - Context-Specific Prompt Generation**: Create new prompts for specific needs
-- **32 - Multi-Agent Verification**: Verify prompt output quality from multiple perspectives
+- **30 - Context-Specific Prompt Generation**: Create new prompts for specific needs
+- **31 - Multi-Agent Verification**: Verify prompt output quality from multiple perspectives

@@ -88,7 +88,7 @@ The ISO standard for human-centered design has four activities:
 | **Understand context of use** | Personas (context, devices, frequency), Workflows (starting_state) |
 | **Specify user requirements** | Workflows (goal, success_criteria), Capabilities (requirements) |
 | **Produce design solutions** | Components, Tokens, Interactions, Views |
-| **Evaluate against requirements** | Validate workflows, run `design_coverage_report`, run `design_validate` |
+| **Evaluate against requirements** | Validate workflows, run `design_analyze --report coverage`, run `design_validate --check all` |
 
 ### Lean UX (Build-Measure-Learn)
 
@@ -187,7 +187,7 @@ After mapping Designloom to established UX processes, the following gaps were id
 - [ ] ≥2 Proto-Personas created covering distinct user segments
 - [ ] Each Persona cites ≥1 Source
 - [ ] Each Persona documents: role, goals, frustrations, context
-- [ ] `design_validate` returns no errors
+- [ ] `design_validate --check all` returns no errors
 
 ### Phase 2: Define (Weeks 2-3)
 
@@ -217,8 +217,8 @@ After mapping Designloom to established UX processes, the following gaps were id
 
 3. **Run Analysis**:
    ```
-   design_validate          # Check for errors
-   design_find_orphans      # Find disconnected entities
+   design_validate --check all          # Check for errors
+   design_validate --check orphans      # Find disconnected entities
    ```
 
 **Success Criteria**:
@@ -228,8 +228,8 @@ After mapping Designloom to established UX processes, the following gaps were id
 - [ ] Each Workflow has ≥2 measurable success criteria with targets
 - [ ] Each Workflow linked to ≥1 Persona
 - [ ] Each Workflow has documented `starting_state`
-- [ ] `design_validate` returns no errors
-- [ ] `design_find_orphans` returns no orphan Personas
+- [ ] `design_validate --check all` returns no errors
+- [ ] `design_validate --check orphans` returns no orphan Personas
 
 ### Phase 3: Ideate (Weeks 3-4)
 
@@ -253,8 +253,8 @@ After mapping Designloom to established UX processes, the following gaps were id
 
 2. **Run Analysis**:
    ```
-   design_find_gaps         # Find workflows missing capabilities
-   design_coverage_report   # Check overall coverage
+   design_validate --check gaps         # Find workflows missing capabilities
+   design_analyze --report coverage   # Check overall coverage
    ```
 
 **Success Criteria**:
@@ -262,9 +262,9 @@ After mapping Designloom to established UX processes, the following gaps were id
 - [ ] Every Workflow has ≥1 required Capability
 - [ ] Each Capability linked to ≥1 Workflow via `used_by_workflows`
 - [ ] Each Capability has ≥3 testable requirements
-- [ ] `design_find_orphans` returns no orphan Capabilities
-- [ ] `design_find_gaps` returns acceptable gaps only (exceptions documented)
-- [ ] `design_validate` returns no errors
+- [ ] `design_validate --check orphans` returns no orphan Capabilities
+- [ ] `design_validate --check gaps` returns acceptable gaps only (exceptions documented)
+- [ ] `design_validate --check all` returns no errors
 
 ### Phase 4: Design Foundation (Weeks 4-5)
 
@@ -303,7 +303,7 @@ After mapping Designloom to established UX processes, the following gaps were id
 - [ ] Base interaction states documented: default, hover, focus, disabled
 - [ ] WCAG 2.1 AA contrast ratios verified (4.5:1 for text, 3:1 for UI)
 - [ ] `motion.durations` defined for animation consistency
-- [ ] `design_validate` returns no errors
+- [ ] `design_validate --check all` returns no errors
 
 ### Phase 5: Component Design (Weeks 5-7)
 
@@ -331,8 +331,8 @@ After mapping Designloom to established UX processes, the following gaps were id
 
 3. **Run Analysis**:
    ```
-   design_find_gaps         # Find capabilities without components
-   design_coverage_report   # Check implementation coverage
+   design_validate --check gaps         # Find capabilities without components
+   design_analyze --report coverage   # Check implementation coverage
    ```
 
 **Success Criteria**:
@@ -342,8 +342,8 @@ After mapping Designloom to established UX processes, the following gaps were id
 - [ ] Each Component has explicit `dependencies` (or empty array)
 - [ ] Each Component has interaction specification (embedded or `interaction_pattern` reference)
 - [ ] Each Component has `category` assigned (atom/molecule/organism)
-- [ ] `design_find_gaps` shows no P0/P1 capabilities without components
-- [ ] `design_validate` returns no errors
+- [ ] `design_validate --check gaps` shows no P0/P1 capabilities without components
+- [ ] `design_validate --check all` returns no errors
 
 ### Phase 6: View Assembly (Weeks 7-8)
 
@@ -378,7 +378,7 @@ After mapping Designloom to established UX processes, the following gaps were id
 - [ ] Each View has `routes` defined (if user-navigable)
 - [ ] Each View has `data_requirements` documented
 - [ ] All Components referenced in View zones exist in Designloom
-- [ ] `design_validate` returns no errors
+- [ ] `design_validate --check all` returns no errors
 
 ### Phase 7: Validation (Weeks 8-9)
 
@@ -421,26 +421,21 @@ After mapping Designloom to established UX processes, the following gaps were id
 - [ ] Major usability issues identified and resolved in designs
 - [ ] P0 Workflows marked `validated: true`
 - [ ] Updated entities reflect test-driven refinements
-- [ ] `design_coverage_report` shows ≥80% capability coverage for P0 workflows
-- [ ] `design_validate` returns no errors
+- [ ] `design_analyze --report coverage` shows ≥80% capability coverage for P0 workflows
+- [ ] `design_validate --check all` returns no errors
 
 **Designloom Integration**:
 ```
 # Document test results
-design_create_source --data '{
-  "id": "prototype-test-w01",
-  "title": "Prototype Test - First Data Import",
-  "url": "path/to/findings",
-  "summary": "8/10 users completed in target time"
-}'
+design_create --entity_type source --id prototype-test-w01 --title "Prototype Test - First Data Import" --url "path/to/findings" --summary "8/10 users completed in target time"
 
 # Mark workflow as validated
-design_update_workflow --id W01 --data '{"validated": true}'
+design_update --entity_type workflow --id W01 --validated true
 
 # Run validation checks
-design_validate
-design_find_orphans
-design_coverage_report   # Target: >80% coverage
+design_validate --check all
+design_validate --check orphans
+design_analyze --report coverage   # Target: >80% coverage
 ```
 
 ### Phase 8: Handoff (Week 9+)
@@ -471,18 +466,18 @@ design_coverage_report   # Target: >80% coverage
 1. **Review all entities** for completeness
 2. **Export documentation**:
    ```
-   design_export_diagram    # Generate visual diagrams
-   design_generate_tests    # Generate test specifications
+   design_export --format diagram    # Generate visual diagrams
+   design_export --format tests    # Generate test specifications
    ```
 3. **Final validation**:
    ```
-   design_validate          # No errors
-   design_find_orphans      # No orphans
+   design_validate --check all          # No errors
+   design_validate --check orphans      # No orphans
    ```
 
 **Success Criteria**:
-- [ ] `design_validate` returns no errors
-- [ ] `design_find_orphans` returns empty
+- [ ] `design_validate --check all` returns no errors
+- [ ] `design_validate --check orphans` returns empty
 - [ ] All key workflows have `validated: true`
 - [ ] All components have `props` documented with types
 - [ ] All views have all `states` defined (default, loading, error, empty)
@@ -561,29 +556,24 @@ design_coverage_report   # Target: >80% coverage
 **Designloom Integration**:
 ```
 # Find highest-impact capabilities (used by most workflows)
-design_list_capabilities
+design_list --entity_type capability
 # Sort by length of used_by_workflows[]
 
 # Find foundational components (most dependencies on them)
-design_list_components
+design_list --entity_type component
 # Look for components frequently appearing in others' dependencies[]
 
 # Identify golden path workflow (validated, highest priority)
-design_list_workflows --filter '{"validated": true}'
+design_list --entity_type workflow --filter '{"validated": true}'
 
 # Add priority to workflows
-design_update_workflow --id W01 --data '{"notes": "P0 - Golden path, implement first"}'
+design_update --entity_type workflow --id W01 --notes "P0 - Golden path, implement first"
 
 # Add priority to capabilities
-design_update_capability --id data-import --data '{"notes": "P0 - Required by 3 workflows"}'
+design_update --entity_type capability --id data-import --notes "P0 - Required by 3 workflows"
 
 # Document technical spike results
-design_create_source --data '{
-  "id": "spike-file-parsing",
-  "title": "Technical Spike - Large File Parsing",
-  "url": "path/to/spike-results",
-  "summary": "Validated streaming approach handles 100MB files in <5s"
-}'
+design_create --entity_type source --id spike-file-parsing --title "Technical Spike - Large File Parsing" --url "path/to/spike-results" --summary "Validated streaming approach handles 100MB files in <5s"
 ```
 
 ### Phase 10: Vertical Slice Implementation (Weeks 11-15)
@@ -665,22 +655,22 @@ Traditional (Risky):          Vertical Slice (Lower Risk):
 **Designloom Integration**:
 ```
 # Get implementation spec for a workflow
-design_get_workflow --id W01
+design_get --entity_type workflow --id W01
 # Returns: goal, success_criteria, required capabilities, suggested components
 
 # Get component implementation details
-design_get_component --id file-upload-dialog
+design_get --entity_type component --id file-upload-dialog
 # Returns: props, dependencies, interaction pattern, accessibility requirements
 
 # Get view layout for implementation
-design_get_view --id V01
+design_get --entity_type view --id V01
 # Returns: layout type, zones with components, states, routing
 
 # Mark workflow as implemented
-design_update_workflow --id W01 --data '{"notes": "Implemented 2025-01-16, validated: pending"}'
+design_update --entity_type workflow --id W01 --notes "Implemented 2025-01-16, validated: pending"
 
 # Track overall progress
-design_coverage_report
+design_analyze --report coverage
 ```
 
 ### Phase 11: Validation and Documentation (Throughout Implementation)
@@ -740,8 +730,8 @@ Designloom entities serve as living documentation:
 | **Component API docs** | `component.props` | Generate TypeScript interfaces, Storybook docs |
 | **Style guide** | `tokens` | Export to CSS custom properties, design tool sync |
 | **User flows** | `workflows` | Generate user journey diagrams |
-| **Architecture diagrams** | Entity relationships | `design_export_diagram` |
-| **Test specifications** | `capability.requirements`, `workflow.success_criteria` | `design_generate_tests` |
+| **Architecture diagrams** | Entity relationships | `design_export --format diagram` |
+| **Test specifications** | `capability.requirements`, `workflow.success_criteria` | `design_export --format tests` |
 | **Accessibility requirements** | `interaction.accessibility` | Compliance checklist |
 | **Feature specifications** | `capabilities` | PRD/requirements documents |
 
@@ -757,23 +747,18 @@ Designloom entities serve as living documentation:
 **Designloom Integration**:
 ```
 # After user testing, update validated status
-design_update_workflow --id W01 --data '{"validated": true}'
+design_update --entity_type workflow --id W01 --validated true
 
 # Document test findings as sources
-design_create_source --data '{
-  "id": "uat-results-w01",
-  "title": "UAT Results - First Data Import",
-  "url": "path/to/results",
-  "summary": "8/10 users completed in <60s, 2 had navigation issues at step 3"
-}'
+design_create --entity_type source --id uat-results-w01 --title "UAT Results - First Data Import" --url "path/to/results" --summary "8/10 users completed in <60s, 2 had navigation issues at step 3"
 
 # Export documentation
-design_export_diagram --type workflow    # User flow diagrams
-design_export_diagram --type component   # Component relationship diagrams
-design_generate_tests --workflow W01     # Test specs from success criteria
+design_export --format diagram --type workflow    # User flow diagrams
+design_export --format diagram --type component   # Component relationship diagrams
+design_export --format tests --workflow W01     # Test specs from success criteria
 
 # Generate component documentation
-design_get_component --id file-upload-dialog
+design_get --entity_type component --id file-upload-dialog
 # Use props output for TypeScript interface generation
 ```
 
@@ -819,14 +804,14 @@ design_get_component --id file-upload-dialog
 
    ```
    # See what's left to implement
-   design_coverage_report
+   design_analyze --report coverage
 
    # Find workflows by priority
-   design_list_workflows
+   design_list --entity_type workflow
    # Filter by notes containing "P1" or "P2"
 
    # Check capability implementation status
-   design_list_capabilities --filter '{"status": "planned"}'
+   design_list --entity_type capability --filter '{"status": "planned"}'
    ```
 
 3. **Extract Reusable Patterns**
@@ -845,7 +830,7 @@ design_get_component --id file-upload-dialog
 - [ ] All P0 and P1 workflows implemented and validated
 - [ ] Coverage report shows target coverage achieved (>80%)
 - [ ] All implemented workflows have `validated: true`
-- [ ] `design_find_orphans` returns empty
+- [ ] `design_validate --check orphans` returns empty
 - [ ] New patterns extracted (3+ similar implementations → component)
 - [ ] User feedback reviewed and integrated
 - [ ] Designloom entities current with implementation state
@@ -853,25 +838,19 @@ design_get_component --id file-upload-dialog
 **Designloom Integration**:
 ```
 # Track implementation progress
-design_coverage_report
+design_analyze --report coverage
 
 # Update workflow status as implemented
-design_update_workflow --id W02 --data '{"notes": "P1 - Implemented 2025-01-20"}'
+design_update --entity_type workflow --id W02 --notes "P1 - Implemented 2025-01-20"
 
 # Add newly discovered component
-design_create_component --data '{
-  "id": "data-preview-card",
-  "name": "Data Preview Card",
-  "description": "Extracted pattern - used in 4 views",
-  "category": "molecule",
-  "implements_capabilities": ["data-preview"]
-}'
+design_create --entity_type component --id data-preview-card --name "Data Preview Card" --description "Extracted pattern - used in 4 views" --category molecule --implements_capabilities '["data-preview"]'
 
 # Update views to use new component
-design_update_view --id V03 --data '{"layout": {...updated zones...}}'
+design_update --entity_type view --id V03 --layout '{...updated zones...}'
 
 # Check for orphans after changes
-design_find_orphans
+design_validate --check orphans
 ```
 
 ### Phase 13: Release and Living Documentation (Weeks 18+)
@@ -906,12 +885,12 @@ design_find_orphans
 
    | Documentation | Designloom Command | Output |
    |---------------|-------------------|--------|
-   | System architecture | `design_export_diagram` | Entity relationship diagrams |
-   | User flows | `design_export_diagram --type workflow` | Workflow journey diagrams |
-   | Test specifications | `design_generate_tests` | Test cases from requirements |
-   | Component catalog | `design_list_components` | Component inventory with props |
-   | Design tokens | `design_list_tokens` | Style guide source |
-   | Accessibility spec | `design_list_interactions` | A11y requirements per component |
+   | System architecture | `design_export --format diagram` | Entity relationship diagrams |
+   | User flows | `design_export --format diagram --type workflow` | Workflow journey diagrams |
+   | Test specifications | `design_export --format tests` | Test cases from requirements |
+   | Component catalog | `design_list --entity_type component` | Component inventory with props |
+   | Design tokens | `design_list --entity_type tokens` | Style guide source |
+   | Accessibility spec | `design_list --entity_type interaction` | A11y requirements per component |
 
 3. **Retrospective and Process Improvement**
    - What design decisions changed during implementation?
@@ -920,15 +899,15 @@ design_find_orphans
    - Document lessons learned as a Source entity
 
 4. **Establish Ongoing Maintenance**
-   - Schedule regular audits (`design_validate`, `design_find_orphans`)
+   - Schedule regular audits (`design_validate`, `design_validate --check orphans`)
    - Update Designloom when implementation changes
    - Use Designloom for change impact analysis
    - Keep documentation exports in sync
 
 **Success Criteria**:
-- [ ] `design_validate` returns no errors
-- [ ] `design_find_orphans` returns empty
-- [ ] `design_coverage_report` shows 100% for P0/P1 workflows
+- [ ] `design_validate --check all` returns no errors
+- [ ] `design_validate --check orphans` returns empty
+- [ ] `design_analyze --report coverage` shows 100% for P0/P1 workflows
 - [ ] All workflows have `validated: true`
 - [ ] Designloom entities match implemented code (no drift)
 - [ ] Documentation exports generated and published
@@ -939,26 +918,21 @@ design_find_orphans
 **Designloom Integration**:
 ```
 # Final validation
-design_validate
-design_find_orphans
-design_coverage_report
+design_validate --check all
+design_validate --check orphans
+design_analyze --report coverage
 
 # Generate all documentation
-design_export_diagram --type all          # Architecture diagrams
-design_generate_tests --all               # Test specifications
+design_export --format diagram --type all          # Architecture diagrams
+design_export --format tests --all               # Test specifications
 
 # Document lessons learned
-design_create_source --data '{
-  "id": "implementation-retro-v1",
-  "title": "Implementation Retrospective - v1.0",
-  "url": "path/to/retro-doc",
-  "summary": "Key learnings: Components needed more detailed props specs, workflow success criteria were accurate"
-}'
+design_create --entity_type source --id implementation-retro-v1 --title "Implementation Retrospective - v1.0" --url "path/to/retro-doc" --summary "Key learnings: Components needed more detailed props specs, workflow success criteria were accurate"
 
 # List all entities for documentation export
-design_list_components --format detailed  # For component catalog
-design_list_tokens                        # For style guide
-design_list_workflows                     # For user documentation
+design_list --entity_type component --format detailed  # For component catalog
+design_list --entity_type tokens                        # For style guide
+design_list --entity_type workflow                     # For user documentation
 ```
 
 ---
@@ -1025,8 +999,8 @@ Before making changes, assess impact:
 
 ```
 # Check what depends on the entity you're changing
-design_get_capability --id <capability-id>  # See _resolved.workflows, _resolved.components
-design_get_component --id <component-id>    # See _resolved.workflows, _resolved.capabilities
+design_get --entity_type capability --id <capability-id>  # See _resolved.workflows, _resolved.components
+design_get --entity_type component --id <component-id>    # See _resolved.workflows, _resolved.capabilities
 ```
 
 #### 2. Incremental vs. Big-Bang Changes
@@ -1084,10 +1058,10 @@ For ongoing projects, establish these practices:
 
 | Audit | Frequency | Command |
 |-------|-----------|---------|
-| Validation | Every change | `design_validate` |
-| Orphan check | Weekly | `design_find_orphans` |
-| Gap analysis | Sprint planning | `design_find_gaps` |
-| Coverage report | Monthly | `design_coverage_report` |
+| Validation | Every change | `design_validate --check all` |
+| Orphan check | Weekly | `design_validate --check orphans` |
+| Gap analysis | Sprint planning | `design_validate --check gaps` |
+| Coverage report | Monthly | `design_analyze --report coverage` |
 
 #### Living Documentation
 
@@ -1217,9 +1191,9 @@ Stream 3: (after initial components) Views
 
 Run these before starting development:
 
-- [ ] `design_validate` returns no errors
-- [ ] `design_find_orphans` returns empty (no disconnected entities)
-- [ ] `design_coverage_report` shows >80% coverage
+- [ ] `design_validate --check all` returns no errors
+- [ ] `design_validate --check orphans` returns empty (no disconnected entities)
+- [ ] `design_analyze --report coverage` shows >80% coverage
 - [ ] All workflows have `validated: true` or documented validation plan
 - [ ] All capabilities have testable requirements
 - [ ] All components have props documented
