@@ -1,3 +1,17 @@
+# [1.1.0](https://github.com/apowers313/designloom/compare/v1.0.1...v1.1.0) (2026-01-20)
+
+
+### Bug Fixes
+
+* fix package-lock for semantic release ([0660795](https://github.com/apowers313/designloom/commit/06607952f431ffabc45c7c2d59b7e776217290c1))
+
+
+### Features
+
+* add web UI for viewing design ([049fdde](https://github.com/apowers313/designloom/commit/049fdde577d37e23d9e955daddc046847a1ceca2))
+* expand objects to support implementation, add pupt prompts ([1dfa239](https://github.com/apowers313/designloom/commit/1dfa239f096264d839970b8d5c19b92ce8796bcf))
+* refactor mcp and prompts to provide a simpler user experience ([d5734c3](https://github.com/apowers313/designloom/commit/d5734c341a05fbaef0b8f2828fae690b782025bb))
+
 ## [1.0.1](https://github.com/apowers313/designloom/compare/v1.0.0...v1.0.1) (2026-01-13)
 
 
